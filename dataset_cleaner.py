@@ -14,6 +14,9 @@ from scipy import stats
 import json
 from datetime import datetime
 from data_analyzer import DataAnalyzer
+from config_manager import config
+from logger_setup import logger, PerformanceTimer, log_dataset_info, log_analysis_results
+from file_handler import file_handler
 
 class DatasetCleaner:
     def __init__(self):
@@ -22,24 +25,11 @@ class DatasetCleaner:
         self.label_encoders = {}
     
     def load_data(self, file_path):
-        """Load CSV or Excel file into pandas DataFrame"""
-        if not os.path.exists(file_path):
-            raise FileNotFoundError(f"File not found: {file_path}")
-        
-        file_path = str(file_path)
-        if file_path.endswith('.csv'):
-            # Try different encodings for CSV files
-            encodings = ['utf-8', 'latin-1', 'iso-8859-1', 'cp1252']
-            for encoding in encodings:
-                try:
-                    return pd.read_csv(file_path, encoding=encoding)
-                except UnicodeDecodeError:
-                    continue
-            raise ValueError(f"Could not decode CSV file with any of the tried encodings: {encodings}")
-        elif file_path.endswith(('.xls', '.xlsx')):
-            return pd.read_excel(file_path)
-        else:
-            raise ValueError("Unsupported file format. Use CSV or Excel files.")
+        """Load data from various file formats using enhanced file handler"""
+        with PerformanceTimer(logger, "Data Loading"):
+            df = file_handler.load_data(file_path)
+            log_dataset_info(logger, df, Path(file_path).stem)
+            return df
     
     def analyze_data(self, df):
         """Analyze dataset and store initial statistics"""
@@ -108,8 +98,10 @@ class DatasetCleaner:
                 
                 outliers_mask = (df[column] < lower_bound) | (df[column] > upper_bound)
             else:  # z-score method
+                non_null_mask = df[column].notna()
                 z_scores = np.abs(stats.zscore(df[column].dropna()))
-                outliers_mask = z_scores > z_threshold
+                outliers_mask = pd.Series(False, index=df.index)
+                outliers_mask[non_null_mask] = z_scores > z_threshold
             
             outliers_count = outliers_mask.sum()
             outliers_removed[column] = outliers_count
@@ -201,10 +193,14 @@ class DatasetCleaner:
         input_path = Path(input_file_path)
         dataset_name = input_path.stem
         
-        # Create main output folder: Cleans-{dataset_name}
-        output_folder = Path(f"Cleans-{dataset_name}")
+        # Get folder prefix from config
+        folder_prefix = config.get_output_folder_prefix()
+        
+        # Create main output folder
+        output_folder = Path(f"{folder_prefix}{dataset_name}")
         output_folder.mkdir(exist_ok=True)
         
+        logger.info(f"Created output folder: {output_folder}")
         return output_folder
     
     def generate_report(self, output_folder, dataset_name):
