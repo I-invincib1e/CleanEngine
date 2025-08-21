@@ -17,6 +17,8 @@ from sklearn.cluster import KMeans
 from sklearn.ensemble import IsolationForest
 from sklearn.preprocessing import StandardScaler
 from sklearn.feature_selection import mutual_info_regression, mutual_info_classif
+from time_series_analyzer import TimeSeriesAnalyzer
+from statistical_tests import StatisticalTester
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -51,6 +53,12 @@ class DataAnalyzer:
         
         # Data quality assessment
         self.data_quality_assessment()
+        
+        # Advanced time series analysis (if applicable)
+        self.time_series_analysis()
+        
+        # Advanced statistical testing
+        self.statistical_testing()
         
         # Generate insights
         self.generate_insights()
@@ -322,6 +330,66 @@ class DataAnalyzer:
         # Store all insights
         self.analysis_results['insights'] = self.insights
     
+    def time_series_analysis(self):
+        """Perform time series analysis if temporal data is detected"""
+        try:
+            # Initialize time series analyzer
+            ts_analyzer = TimeSeriesAnalyzer(self.df)
+            
+            # Check if time series analysis is applicable
+            if ts_analyzer.date_column and ts_analyzer.value_columns:
+                print("🕒 Time series data detected - performing temporal analysis...")
+                
+                # Run time series analysis
+                ts_results = ts_analyzer.comprehensive_time_series_analysis()
+                
+                # Merge results
+                self.analysis_results['time_series_analysis'] = ts_results
+                
+                # Merge insights
+                ts_insights = ts_results.get('time_series_insights', [])
+                self.insights.extend(ts_insights)
+                
+                print("✅ Time series analysis completed!")
+            else:
+                self.analysis_results['time_series_analysis'] = {
+                    'applicable': False,
+                    'reason': 'No temporal data detected'
+                }
+        
+        except Exception as e:
+            print(f"⚠️ Time series analysis failed: {str(e)}")
+            self.analysis_results['time_series_analysis'] = {
+                'applicable': False,
+                'error': str(e)
+            }
+    
+    def statistical_testing(self):
+        """Perform comprehensive statistical testing"""
+        try:
+            print("📊 Performing advanced statistical tests...")
+            
+            # Initialize statistical tester
+            stat_tester = StatisticalTester(self.df)
+            
+            # Run comprehensive testing
+            test_results = stat_tester.comprehensive_statistical_testing()
+            
+            # Merge results
+            self.analysis_results['statistical_tests'] = test_results
+            
+            # Merge insights
+            stat_insights = test_results.get('statistical_insights', [])
+            self.insights.extend(stat_insights)
+            
+            print("✅ Statistical testing completed!")
+        
+        except Exception as e:
+            print(f"⚠️ Statistical testing failed: {str(e)}")
+            self.analysis_results['statistical_tests'] = {
+                'error': str(e)
+            }
+    
     def create_analysis_visualizations(self, output_folder):
         """Create comprehensive visualizations"""
         print("📊 Creating analysis visualizations...")
@@ -343,6 +411,9 @@ class DataAnalyzer:
         
         # 4. Data quality dashboard
         self.create_quality_dashboard(viz_folder)
+        
+        # 5. Time series visualizations (if applicable)
+        self.create_time_series_visualizations(viz_folder)
         
         print(f"📈 Visualizations saved in: {viz_folder}")
         return viz_folder
@@ -463,6 +534,31 @@ class DataAnalyzer:
             plt.tight_layout()
             plt.savefig(viz_folder / 'quality_dashboard.png', dpi=300, bbox_inches='tight')
             plt.close()
+    
+    def create_time_series_visualizations(self, viz_folder):
+        """Create time series visualizations if applicable"""
+        if 'time_series_analysis' not in self.analysis_results:
+            return
+        
+        ts_analysis = self.analysis_results['time_series_analysis']
+        if not ts_analysis.get('applicable', True):
+            return
+        
+        try:
+            # Initialize time series analyzer for visualization
+            ts_analyzer = TimeSeriesAnalyzer(self.df)
+            
+            if ts_analyzer.date_column and ts_analyzer.value_columns:
+                # Set analysis results to avoid re-computation
+                ts_analyzer.analysis_results = ts_analysis
+                
+                # Create time series visualizations
+                ts_viz_folder = ts_analyzer.create_time_series_visualizations(viz_folder.parent)
+                
+                print(f"📈 Time series visualizations created!")
+        
+        except Exception as e:
+            print(f"⚠️ Time series visualization failed: {str(e)}")
     
     def generate_analysis_report(self, output_folder, dataset_name):
         """Generate comprehensive analysis report"""
