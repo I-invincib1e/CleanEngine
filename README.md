@@ -4,7 +4,6 @@
 [![Python](https://img.shields.io/badge/python-3.9%2B-blue)](#)
 [![License: MIT](https://img.shields.io/badge/license-MIT-yellow)](./LICENSE)
 [![CLI](https://img.shields.io/badge/CLI-Rich%20%2B%20Typer-purple)](#)
-[![Main Branch](https://img.shields.io/badge/branch-main-blue)](#)
 
 CleanEngine is a fast, modular toolkit for data cleaning, profiling, and analysis. It supports CSV/Excel/JSON/Parquet, produces reports and visualizations, and provides a YAML-driven rule engine for validation.
 
@@ -70,6 +69,12 @@ src/dataset_cleaner/
 scripts/                 # Entrypoints
 config/                  # Config YAML (defaults & overrides)
 ```
+
+## 📚 Documentation & Community
+- **Contributing**: [CONTRIBUTING.md](./CONTRIBUTING.md) - Setup, code style, tests, PR rules
+- **Code of Conduct**: [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md) - Community guidelines
+- **Security**: [SECURITY.md](./SECURITY.md) - Vulnerability reporting
+- **Code Owners**: [CODEOWNERS](./CODEOWNERS) - Review requirements
 
 ## 📝 Notes
 - Formats: CSV, XLSX, JSON, Parquet
