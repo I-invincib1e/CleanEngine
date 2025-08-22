@@ -6,7 +6,7 @@ Quick way to clean a dataset with default settings.
 
 import sys
 from pathlib import Path
-from dataset_cleaner import DatasetCleaner
+from src.dataset_cleaner.core.cleaner import DatasetCleaner
 
 
 def main():

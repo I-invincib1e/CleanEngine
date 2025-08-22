@@ -16,18 +16,18 @@ def run_tests():
     print("=" * 60)
     
     # Add current directory to Python path
-    current_dir = Path(__file__).parent
-    sys.path.insert(0, str(current_dir))
+    project_root = Path(__file__).parent.parent
+    sys.path.insert(0, str(project_root / 'src'))
     
-    # Discover and run tests
-    loader = unittest.TestLoader()
-    start_dir = current_dir / 'tests'
+    # Discover and run tests from the project root
+    start_dir = project_root / 'tests'
     
     if not start_dir.exists():
         print("❌ Tests directory not found!")
         return False
     
     # Load test suite
+    loader = unittest.TestLoader()
     suite = loader.discover(str(start_dir), pattern='test_*.py')
     
     # Count tests
@@ -84,7 +84,7 @@ def run_specific_test(test_name):
     
     # Add current directory to Python path
     current_dir = Path(__file__).parent
-    sys.path.insert(0, str(current_dir))
+    sys.path.insert(0, str(current_dir.parent / 'src'))
     
     try:
         # Import and run specific test

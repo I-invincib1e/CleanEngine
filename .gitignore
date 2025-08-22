@@ -166,10 +166,10 @@ cython_debug/
 .ipynb_checkpoints/
 
 # Data files (add specific patterns as needed)
-*.csv
-*.xlsx
-*.xls
-*.json
+# Keep small sample data in repo; ignore large/raw data and outputs
+!sample_*.csv
+!config/default_config.yaml
+Cleans-*/
 *.parquet
 *.h5
 *.hdf5
@@ -182,12 +182,12 @@ cython_debug/
 *.joblib
 *.h5
 
-# Visualization outputs
-*.png
-*.jpg
-*.jpeg
-*.pdf
-*.svg
+# Visualization outputs (only ignore those in output folders)
+Cleans-*/**/*.png
+Cleans-*/**/*.jpg
+Cleans-*/**/*.jpeg
+Cleans-*/**/*.pdf
+Cleans-*/**/*.svg
 
 # Temporary files
 temp_*

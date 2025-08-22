@@ -10,7 +10,7 @@ import json
 from pathlib import Path
 from typing import Union, Optional, Dict, Any
 import logging
-from config_manager import config
+from .config_manager import config
 
 logger = logging.getLogger('dataset_cleaner')
 

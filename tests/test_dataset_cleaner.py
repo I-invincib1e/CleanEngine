@@ -15,8 +15,8 @@ import sys
 # Add parent directory to path for imports
 sys.path.append(str(Path(__file__).parent.parent))
 
-from dataset_cleaner import DatasetCleaner
-from config_manager import ConfigManager
+from src.dataset_cleaner.core.cleaner import DatasetCleaner
+from src.dataset_cleaner.utils.config_manager import ConfigManager
 
 class TestDatasetCleaner(unittest.TestCase):
     """Test cases for DatasetCleaner class"""

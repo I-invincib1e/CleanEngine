@@ -249,7 +249,12 @@ def main():
                         
                         # Remove temp file
                         import os
-                        os.remove(temp_file)
+                        # Clean up temp file if it exists
+                        try:
+                            os.remove(temp_file)
+                        except (OSError, FileNotFoundError) as e:
+                            # File may already be deleted or not accessible
+                            pass
                         
                         st.info(f"📂 All files saved in organized folder: {output_folder.name}")
                         
@@ -444,7 +449,8 @@ def main():
                         # Clean up temp file if it exists
                         try:
                             os.remove(temp_file)
-                        except:
+                        except (OSError, FileNotFoundError) as e:
+                            # File may already be deleted or not accessible
                             pass
         
         except Exception as e:

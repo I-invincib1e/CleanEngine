@@ -9,7 +9,7 @@ import logging.handlers
 import os
 from pathlib import Path
 from typing import Optional
-from config_manager import config
+from .config_manager import config
 
 def setup_logging(
     log_level: Optional[str] = None,

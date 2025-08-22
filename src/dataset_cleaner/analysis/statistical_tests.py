@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Advanced Statistical Tests for Dataset Cleaner
+Advanced Statistical Tests Module
 Comprehensive statistical testing suite for data analysis.
 """
 
@@ -36,7 +36,7 @@ class StatisticalTester:
             
             results = {}
             
-            # Shapiro-Wilk test (best for small samples)
+            # Shapiro-Wilk test (good for small samples)
             if len(data) <= 5000:
                 try:
                     shapiro_stat, shapiro_p = stats.shapiro(data)
@@ -45,7 +45,8 @@ class StatisticalTester:
                         'p_value': shapiro_p,
                         'is_normal': shapiro_p > alpha
                     }
-                except:
+                except (ValueError, RuntimeWarning) as e:
+                    # Data may be too small or have issues
                     pass
             
             # D'Agostino's normality test (good for larger samples)
@@ -57,7 +58,8 @@ class StatisticalTester:
                         'p_value': dagostino_p,
                         'is_normal': dagostino_p > alpha
                     }
-                except:
+                except (ValueError, RuntimeWarning) as e:
+                    # Data may have issues
                     pass
             
             # Kolmogorov-Smirnov test
@@ -69,7 +71,8 @@ class StatisticalTester:
                     'p_value': ks_p,
                     'is_normal': ks_p > alpha
                 }
-            except:
+            except (ValueError, RuntimeWarning) as e:
+                # Data may have issues
                 pass
             
             # Anderson-Darling test
@@ -82,7 +85,8 @@ class StatisticalTester:
                     'critical_value': critical_value,
                     'is_normal': ad_result.statistic < critical_value
                 }
-            except:
+            except (ValueError, RuntimeWarning) as e:
+                # Data may have issues
                 pass
             
             # Consensus decision
@@ -121,7 +125,8 @@ class StatisticalTester:
                 'p_value': levene_p,
                 'equal_variances': levene_p > alpha
             }
-        except:
+        except (ValueError, RuntimeWarning) as e:
+            # Groups may have issues
             pass
         
         # Bartlett's test (assumes normality)
@@ -132,18 +137,20 @@ class StatisticalTester:
                 'p_value': bartlett_p,
                 'equal_variances': bartlett_p > alpha
             }
-        except:
+        except (ValueError, RuntimeWarning) as e:
+            # Groups may have issues
             pass
         
         # Fligner-Killeen test (non-parametric)
         try:
             fligner_stat, fligner_p = stats.fligner(*groups)
-            variance_results['fligner'] = {
+            variance_results['fligner_killeen'] = {
                 'statistic': fligner_stat,
                 'p_value': fligner_p,
                 'equal_variances': fligner_p > alpha
             }
-        except:
+        except (ValueError, RuntimeWarning) as e:
+            # Groups may have issues
             pass
         
         return variance_results
@@ -173,9 +180,7 @@ class StatisticalTester:
             anova_results['one_way_anova'] = {
                 'f_statistic': f_stat,
                 'p_value': p_value,
-                'significant': p_value < alpha,
-                'groups': len(groups),
-                'total_observations': sum(len(g) for g in groups)
+                'significant_difference': p_value < alpha
             }
             
             # Effect size (eta-squared)
@@ -189,8 +194,9 @@ class StatisticalTester:
                 effect_size = 'large' if eta_squared > 0.14 else 'medium' if eta_squared > 0.06 else 'small'
                 self.insights.append(f"Significant difference in {dependent_var} across {independent_var} groups (η² = {eta_squared:.3f}, {effect_size} effect)")
             
-        except Exception as e:
-            anova_results['error'] = str(e)
+        except (ValueError, RuntimeWarning) as e:
+            # Groups may have issues
+            pass
         
         # Test assumptions
         variance_test = self.test_equal_variances(groups, alpha)
@@ -226,7 +232,7 @@ class StatisticalTester:
                 'chi2_statistic': chi2_stat,
                 'p_value': p_value,
                 'degrees_of_freedom': dof,
-                'significant': p_value < alpha,
+                'significant_association': p_value < alpha,
                 'min_expected_frequency': min_expected,
                 'cells_below_5': cells_below_5,
                 'percent_cells_below_5': (cells_below_5 / total_cells) * 100,
@@ -258,8 +264,9 @@ class StatisticalTester:
             if not chi2_results['chi_square']['assumption_met']:
                 self.insights.append(f"Chi-square assumptions violated for {var1} vs {var2} - consider Fisher's exact test")
         
-        except Exception as e:
-            chi2_results['error'] = str(e)
+        except (ValueError, RuntimeWarning) as e:
+            # Contingency table may have issues
+            pass
         
         self.test_results[f'chi_square_{var1}_vs_{var2}'] = chi2_results
         return chi2_results
@@ -284,7 +291,8 @@ class StatisticalTester:
                 'p_value': pearson_p,
                 'significant': pearson_p < alpha
             }
-        except:
+        except (ValueError, RuntimeWarning) as e:
+            # Data may have issues
             pass
         
         # Spearman correlation (non-parametric)
@@ -295,7 +303,8 @@ class StatisticalTester:
                 'p_value': spearman_p,
                 'significant': spearman_p < alpha
             }
-        except:
+        except (ValueError, RuntimeWarning) as e:
+            # Data may have issues
             pass
         
         # Kendall's tau (non-parametric, robust)
@@ -306,7 +315,8 @@ class StatisticalTester:
                 'p_value': kendall_p,
                 'significant': kendall_p < alpha
             }
-        except:
+        except (ValueError, RuntimeWarning) as e:
+            # Data may have issues
             pass
         
         # Generate insights
@@ -349,7 +359,7 @@ class StatisticalTester:
                         direction = 'increase' if diff.mean() > 0 else 'decrease'
                         self.insights.append(f"Significant {direction} from {var2} to {var1} (d = {cohens_d:.3f}, {effect_size} effect)")
                 
-                except Exception as e:
+                except (ValueError, RuntimeWarning) as e:
                     t_test_results['paired_t_test_error'] = str(e)
         
         elif group_var is not None:
@@ -404,7 +414,7 @@ class StatisticalTester:
                             higher_group = groups.index[0] if np.mean(group1) > np.mean(group2) else groups.index[1]
                             self.insights.append(f"Significant difference in {var1} between {group_var} groups (d = {cohens_d:.3f}, {effect_size} effect, {higher_group} higher)")
                     
-                    except Exception as e:
+                    except (ValueError, RuntimeWarning) as e:
                         t_test_results['independent_t_test_error'] = str(e)
         
         if t_test_results:
@@ -441,7 +451,7 @@ class StatisticalTester:
                         direction = 'increase' if median_diff > 0 else 'decrease'
                         self.insights.append(f"Significant median {direction} from {var2} to {var1} (Wilcoxon test)")
                 
-                except Exception as e:
+                except (ValueError, RuntimeWarning) as e:
                     nonparam_results['wilcoxon_error'] = str(e)
         
         elif group_var is not None:
@@ -467,7 +477,7 @@ class StatisticalTester:
                         higher_group = group_names[0] if np.median(groups[0]) > np.median(groups[1]) else group_names[1]
                         self.insights.append(f"Significant difference in {var1} medians between {group_var} groups (Mann-Whitney U, {higher_group} higher)")
                 
-                except Exception as e:
+                except (ValueError, RuntimeWarning) as e:
                     nonparam_results['mann_whitney_error'] = str(e)
             
             elif len(groups) > 2:
@@ -486,7 +496,7 @@ class StatisticalTester:
                     if p_value < alpha:
                         self.insights.append(f"Significant difference in {var1} medians across {group_var} groups (Kruskal-Wallis test)")
                 
-                except Exception as e:
+                except (ValueError, RuntimeWarning) as e:
                     nonparam_results['kruskal_wallis_error'] = str(e)
         
         if nonparam_results:

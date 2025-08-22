@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Advanced Data Analyzer
+Advanced Data Analyzer Module
 Comprehensive data analysis and insights generation for cleaned datasets.
 """
 
@@ -17,41 +17,57 @@ from sklearn.cluster import KMeans
 from sklearn.ensemble import IsolationForest
 from sklearn.preprocessing import StandardScaler
 from sklearn.feature_selection import mutual_info_regression, mutual_info_classif
-from time_series_analyzer import TimeSeriesAnalyzer
-from statistical_tests import StatisticalTester
+
+from .time_series import TimeSeriesAnalyzer
+from .statistical_tests import StatisticalTester
+from ..utils.logger_setup import logger
+
 import warnings
 warnings.filterwarnings('ignore')
 
+
 class DataAnalyzer:
-    def __init__(self, df, original_df=None):
+    """Advanced data analysis and insights generation"""
+    
+    def __init__(self, df, original_df=None, config_manager=None):
         self.df = df.copy()
         self.original_df = original_df.copy() if original_df is not None else None
+        self.config = config_manager
+        self.logger = logger
         self.analysis_results = {}
         self.insights = []
         
     def generate_comprehensive_analysis(self):
         """Generate comprehensive data analysis"""
-        print("🔍 Performing comprehensive data analysis...")
+        self.logger.info("Starting comprehensive data analysis")
         
-        # Basic statistical analysis
+        # Only show user feedback if configured
+        show_feedback = self.config.get('analysis.show_user_feedback', True) if self.config else True
+        if show_feedback:
+            print("🔍 Performing comprehensive data analysis...")
+        
+        # Always perform basic statistical analysis
         self.statistical_analysis()
         
-        # Correlation analysis
+        # Always perform correlation analysis
         self.correlation_analysis()
         
         # Distribution analysis
         self.distribution_analysis()
         
         # Feature importance analysis
-        self.feature_importance_analysis()
+        if self.config and self.config.get('analysis.feature_importance.enable', True):
+            self.feature_importance_analysis()
         
         # Clustering analysis
-        self.clustering_analysis()
+        if self.config and self.config.get('analysis.clustering.enable', True):
+            self.clustering_analysis()
         
         # Anomaly detection
-        self.anomaly_detection()
+        if self.config and self.config.get('analysis.anomaly_detection.enable', True):
+            self.anomaly_detection()
         
-        # Data quality assessment
+        # Always perform data quality assessment
         self.data_quality_assessment()
         
         # Advanced time series analysis (if applicable)
@@ -63,31 +79,37 @@ class DataAnalyzer:
         # Generate insights
         self.generate_insights()
         
-        print("✅ Comprehensive analysis completed!")
+        self.logger.info("Comprehensive analysis completed")
+        if show_feedback:
+            print("✅ Comprehensive analysis completed!")
         return self.analysis_results
     
     def statistical_analysis(self):
         """Perform statistical analysis"""
         numeric_cols = self.df.select_dtypes(include=[np.number]).columns
-        
         if len(numeric_cols) > 0:
             stats_summary = self.df[numeric_cols].describe()
-            
             # Additional statistics
             skewness = self.df[numeric_cols].skew()
             kurtosis = self.df[numeric_cols].kurtosis()
-            
             self.analysis_results['statistical_summary'] = {
                 'descriptive_stats': stats_summary.to_dict(),
                 'skewness': skewness.to_dict(),
                 'kurtosis': kurtosis.to_dict(),
                 'numeric_columns_count': len(numeric_cols)
             }
-            
             # Identify highly skewed columns
             highly_skewed = skewness[abs(skewness) > 1].to_dict()
             if highly_skewed:
                 self.insights.append(f"Highly skewed columns detected: {list(highly_skewed.keys())}")
+        else:
+            # Always add statistical_summary, even if empty
+            self.analysis_results['statistical_summary'] = {
+                'descriptive_stats': {},
+                'skewness': {},
+                'kurtosis': {},
+                'numeric_columns_count': 0
+            }
     
     def correlation_analysis(self):
         """Analyze correlations between variables"""
@@ -96,12 +118,15 @@ class DataAnalyzer:
         if len(numeric_cols) > 1:
             correlation_matrix = self.df[numeric_cols].corr()
             
-            # Find strong correlations (>0.7 or <-0.7)
+            # Get correlation threshold from config
+            threshold = self.config.get('analysis.correlation.threshold', 0.7) if self.config else 0.7
+            
+            # Find strong correlations
             strong_correlations = []
             for i in range(len(correlation_matrix.columns)):
                 for j in range(i+1, len(correlation_matrix.columns)):
                     corr_val = correlation_matrix.iloc[i, j]
-                    if abs(corr_val) > 0.7:
+                    if abs(corr_val) > threshold:
                         strong_correlations.append({
                             'var1': correlation_matrix.columns[i],
                             'var2': correlation_matrix.columns[j],
@@ -115,6 +140,12 @@ class DataAnalyzer:
             
             if strong_correlations:
                 self.insights.append(f"Found {len(strong_correlations)} strong correlations between variables")
+        else:
+            # Always add correlation_analysis, even if empty
+            self.analysis_results['correlation_analysis'] = {
+                'correlation_matrix': {},
+                'strong_correlations': []
+            }
     
     def distribution_analysis(self):
         """Analyze data distributions"""
@@ -199,8 +230,9 @@ class DataAnalyzer:
                 scaled_data = scaler.fit_transform(cluster_data)
                 
                 # Determine optimal number of clusters using elbow method
+                max_clusters = self.config.get('analysis.clustering.max_clusters', 10) if self.config else 10
                 inertias = []
-                k_range = range(2, min(8, len(cluster_data)//2))
+                k_range = range(2, min(max_clusters, len(cluster_data)//2))
                 
                 for k in k_range:
                     kmeans = KMeans(n_clusters=k, random_state=42, n_init=10)
@@ -244,7 +276,8 @@ class DataAnalyzer:
             anomaly_data = self.df[numeric_cols].fillna(0)
             
             if len(anomaly_data) > 10:
-                iso_forest = IsolationForest(contamination=0.1, random_state=42)
+                contamination = self.config.get('analysis.anomaly_detection.contamination', 0.1) if self.config else 0.1
+                iso_forest = IsolationForest(contamination=contamination, random_state=42)
                 anomaly_labels = iso_forest.fit_predict(anomaly_data)
                 
                 anomaly_count = np.sum(anomaly_labels == -1)
@@ -331,43 +364,42 @@ class DataAnalyzer:
         self.analysis_results['insights'] = self.insights
     
     def time_series_analysis(self):
-        """Perform time series analysis if temporal data is detected"""
+        """Perform time series analysis if applicable"""
         try:
-            # Initialize time series analyzer
-            ts_analyzer = TimeSeriesAnalyzer(self.df)
-            
-            # Check if time series analysis is applicable
-            if ts_analyzer.date_column and ts_analyzer.value_columns:
-                print("🕒 Time series data detected - performing temporal analysis...")
-                
-                # Run time series analysis
-                ts_results = ts_analyzer.comprehensive_time_series_analysis()
-                
-                # Merge results
-                self.analysis_results['time_series_analysis'] = ts_results
-                
-                # Merge insights
-                ts_insights = ts_results.get('time_series_insights', [])
-                self.insights.extend(ts_insights)
-                
-                print("✅ Time series analysis completed!")
-            else:
-                self.analysis_results['time_series_analysis'] = {
-                    'applicable': False,
-                    'reason': 'No temporal data detected'
-                }
-        
+            if self.original_df is not None:
+                # Check if we have time series data
+                time_series_analyzer = TimeSeriesAnalyzer(self.original_df)
+                if time_series_analyzer.date_column:
+                    show_feedback = self.config.get('analysis.show_user_feedback', True) if self.config else True
+                    if show_feedback:
+                        print("🕒 Time series data detected - performing temporal analysis...")
+                    
+                    # Perform time series analysis
+                    time_series_results = time_series_analyzer.comprehensive_analysis()
+                    self.analysis_results['time_series_analysis'] = time_series_results
+                    
+                    # Merge insights
+                    ts_insights = time_series_results.get('insights', [])
+                    self.insights.extend(ts_insights)
+                    
+                    if show_feedback:
+                        print("✅ Time series analysis completed!")
+                    
         except Exception as e:
-            print(f"⚠️ Time series analysis failed: {str(e)}")
+            self.logger.error(f"Time series analysis failed: {str(e)}")
+            show_feedback = self.config.get('analysis.show_user_feedback', True) if self.config else True
+            if show_feedback:
+                print(f"⚠️ Time series analysis failed: {str(e)}")
             self.analysis_results['time_series_analysis'] = {
-                'applicable': False,
                 'error': str(e)
             }
     
     def statistical_testing(self):
-        """Perform comprehensive statistical testing"""
+        """Perform advanced statistical testing"""
         try:
-            print("📊 Performing advanced statistical tests...")
+            show_feedback = self.config.get('analysis.show_user_feedback', True) if self.config else True
+            if show_feedback:
+                print("📊 Performing advanced statistical tests...")
             
             # Initialize statistical tester
             stat_tester = StatisticalTester(self.df)
@@ -382,23 +414,37 @@ class DataAnalyzer:
             stat_insights = test_results.get('statistical_insights', [])
             self.insights.extend(stat_insights)
             
-            print("✅ Statistical testing completed!")
+            if show_feedback:
+                print("✅ Statistical testing completed!")
         
         except Exception as e:
-            print(f"⚠️ Statistical testing failed: {str(e)}")
+            self.logger.error(f"Statistical testing failed: {str(e)}")
+            show_feedback = self.config.get('analysis.show_user_feedback', True) if self.config else True
+            if show_feedback:
+                print(f"⚠️ Statistical testing failed: {str(e)}")
             self.analysis_results['statistical_tests'] = {
                 'error': str(e)
             }
     
     def create_analysis_visualizations(self, output_folder):
         """Create comprehensive visualizations"""
-        print("📊 Creating analysis visualizations...")
-        
+        if not self.config or not self.config.get('visualization.enable', True):
+            self.logger.info("Visualizations disabled in configuration")
+            return None
+
+        show_feedback = self.config.get('analysis.show_user_feedback', True) if self.config else True
+        if show_feedback:
+            print("📊 Creating analysis visualizations...")
+        self.logger.info("Creating analysis visualizations")
+
         viz_folder = output_folder / "visualizations"
         viz_folder.mkdir(exist_ok=True)
+        if show_feedback:
+            print(f"📁 Created visualizations folder: {viz_folder}")
         
         # Set style
-        plt.style.use('seaborn-v0_8')
+        style = self.config.get('visualization.style', 'seaborn-v0_8') if self.config else 'seaborn-v0_8'
+        plt.style.use(style)
         
         # 1. Correlation heatmap
         self.create_correlation_heatmap(viz_folder)
@@ -415,52 +461,82 @@ class DataAnalyzer:
         # 5. Time series visualizations (if applicable)
         self.create_time_series_visualizations(viz_folder)
         
-        print(f"📈 Visualizations saved in: {viz_folder}")
+        self.logger.info(f"Visualizations saved in: {viz_folder}")
+        if show_feedback:
+            print(f"📈 Visualizations saved in: {viz_folder}")
         return viz_folder
     
     def create_correlation_heatmap(self, viz_folder):
         """Create correlation heatmap"""
+        show_feedback = self.config.get('analysis.show_user_feedback', True) if self.config else True
+        if show_feedback:
+            print(f"🔥 Creating correlation heatmap in: {viz_folder}")
         numeric_cols = self.df.select_dtypes(include=[np.number]).columns
-        
+        if show_feedback:
+            print(f"📊 Found {len(numeric_cols)} numeric columns: {list(numeric_cols)}")
+
         if len(numeric_cols) > 1:
-            plt.figure(figsize=(12, 8))
+            fig_size = self.config.get('visualization.figure_size', [12, 8]) if self.config else [12, 8]
+            plt.figure(figsize=fig_size)
             correlation_matrix = self.df[numeric_cols].corr()
-            
-            sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', center=0,
+
+            color_palette = self.config.get('visualization.color_palette', 'viridis') if self.config else 'coolwarm'
+            sns.heatmap(correlation_matrix, annot=True, cmap=color_palette, center=0,
                        square=True, fmt='.2f', cbar_kws={'shrink': 0.8})
             plt.title('Feature Correlation Matrix', fontsize=16, fontweight='bold')
             plt.tight_layout()
-            plt.savefig(viz_folder / 'correlation_heatmap.png', dpi=300, bbox_inches='tight')
+
+            output_file = viz_folder / 'correlation_heatmap.png'
+            dpi = self.config.get('visualization.dpi', 300) if self.config else 300
+            plt.savefig(output_file, dpi=dpi, bbox_inches='tight')
             plt.close()
+            if show_feedback:
+                print(f"✅ Saved correlation heatmap: {output_file}")
+        else:
+            if show_feedback:
+                print("⚠️ Not enough numeric columns for correlation heatmap")
     
     def create_distribution_plots(self, viz_folder):
         """Create distribution plots for numeric columns"""
+        show_feedback = self.config.get('analysis.show_user_feedback', True) if self.config else True
+        if show_feedback:
+            print(f"🔥 Creating distribution plots in: {viz_folder}")
         numeric_cols = self.df.select_dtypes(include=[np.number]).columns
-        
+        if show_feedback:
+            print(f"📊 Found {len(numeric_cols)} numeric columns: {list(numeric_cols)}")
+
         if len(numeric_cols) > 0:
             n_cols = min(4, len(numeric_cols))
             n_rows = (len(numeric_cols) + n_cols - 1) // n_cols
-            
+
+            fig_size = self.config.get('visualization.figure_size', [12, 8]) if self.config else [12, 8]
             fig, axes = plt.subplots(n_rows, n_cols, figsize=(5*n_cols, 4*n_rows))
             if n_rows == 1:
                 axes = [axes] if n_cols == 1 else axes
             else:
                 axes = axes.flatten()
-            
+
             for i, col in enumerate(numeric_cols):
                 if i < len(axes):
-                    self.df[col].hist(bins=30, ax=axes[i], alpha=0.7, edgecolor='black')
-                    axes[i].set_title(f'Distribution of {col}', fontweight='bold')
+                    axes[i].hist(self.df[col].dropna(), bins=30, alpha=0.7, edgecolor='black')
+                    axes[i].set_title(f'Distribution: {col}', fontweight='bold')
                     axes[i].set_xlabel(col)
                     axes[i].set_ylabel('Frequency')
-            
+
             # Hide empty subplots
             for i in range(len(numeric_cols), len(axes)):
                 axes[i].set_visible(False)
-            
+
             plt.tight_layout()
-            plt.savefig(viz_folder / 'distributions.png', dpi=300, bbox_inches='tight')
+            output_file = viz_folder / 'distributions.png'
+            dpi = self.config.get('visualization.dpi', 300) if self.config else 300
+            plt.savefig(output_file, dpi=dpi, bbox_inches='tight')
             plt.close()
+            if show_feedback:
+                print(f"✅ Saved distribution plots: {output_file}")
+        else:
+            if show_feedback:
+                print("⚠️ No numeric columns found for distribution plots")
     
     def create_feature_importance_plot(self, viz_folder):
         """Create feature importance plot"""
@@ -471,7 +547,8 @@ class DataAnalyzer:
             if top_features:
                 features, scores = zip(*top_features)
                 
-                plt.figure(figsize=(10, 6))
+                fig_size = self.config.get('visualization.figure_size', [12, 8]) if self.config else [10, 6]
+                plt.figure(figsize=fig_size)
                 bars = plt.barh(range(len(features)), scores)
                 plt.yticks(range(len(features)), features)
                 plt.xlabel('Importance Score')
@@ -479,11 +556,13 @@ class DataAnalyzer:
                          fontsize=14, fontweight='bold')
                 
                 # Color bars
+                color_palette = self.config.get('visualization.color_palette', 'viridis') if self.config else 'viridis'
                 for i, bar in enumerate(bars):
-                    bar.set_color(plt.cm.viridis(i / len(bars)))
+                    bar.set_color(plt.cm.get_cmap(color_palette)(i / len(bars)))
                 
                 plt.tight_layout()
-                plt.savefig(viz_folder / 'feature_importance.png', dpi=300, bbox_inches='tight')
+                dpi = self.config.get('visualization.dpi', 300) if self.config else 300
+                plt.savefig(viz_folder / 'feature_importance.png', dpi=dpi, bbox_inches='tight')
                 plt.close()
     
     def create_quality_dashboard(self, viz_folder):
@@ -532,33 +611,25 @@ class DataAnalyzer:
                 ax4.set_title('Column Uniqueness Scores', fontweight='bold')
             
             plt.tight_layout()
-            plt.savefig(viz_folder / 'quality_dashboard.png', dpi=300, bbox_inches='tight')
+            dpi = self.config.get('visualization.dpi', 300) if self.config else 300
+            plt.savefig(viz_folder / 'quality_dashboard.png', dpi=dpi, bbox_inches='tight')
             plt.close()
     
     def create_time_series_visualizations(self, viz_folder):
         """Create time series visualizations if applicable"""
-        if 'time_series_analysis' not in self.analysis_results:
-            return
-        
-        ts_analysis = self.analysis_results['time_series_analysis']
-        if not ts_analysis.get('applicable', True):
-            return
-        
         try:
-            # Initialize time series analyzer for visualization
-            ts_analyzer = TimeSeriesAnalyzer(self.df)
-            
-            if ts_analyzer.date_column and ts_analyzer.value_columns:
-                # Set analysis results to avoid re-computation
-                ts_analyzer.analysis_results = ts_analysis
-                
-                # Create time series visualizations
-                ts_viz_folder = ts_analyzer.create_time_series_visualizations(viz_folder.parent)
-                
-                print(f"📈 Time series visualizations created!")
-        
+            if 'time_series_analysis' in self.analysis_results:
+                time_series_analyzer = TimeSeriesAnalyzer(self.original_df)
+                if time_series_analyzer.date_column:
+                    time_series_analyzer.create_visualizations(viz_folder)
+                    show_feedback = self.config.get('analysis.show_user_feedback', True) if self.config else True
+                    if show_feedback:
+                        print("📈 Time series visualizations created!")
         except Exception as e:
-            print(f"⚠️ Time series visualization failed: {str(e)}")
+            self.logger.error(f"Time series visualization failed: {str(e)}")
+            show_feedback = self.config.get('analysis.show_user_feedback', True) if self.config else True
+            if show_feedback:
+                print(f"⚠️ Time series visualization failed: {str(e)}")
     
     def generate_analysis_report(self, output_folder, dataset_name):
         """Generate comprehensive analysis report"""
@@ -626,7 +697,10 @@ class DataAnalyzer:
             f.write("\n---\n")
             f.write("*Report generated by Advanced Data Analyzer*\n")
         
-        print(f"📄 Analysis report saved: {report_file}")
+        self.logger.info(f"Analysis report saved: {report_file}")
+        show_feedback = self.config.get('analysis.show_user_feedback', True) if self.config else True
+        if show_feedback:
+            print(f"📄 Analysis report saved: {report_file}")
         return report_file
     
     def generate_recommendations(self, file_handle):
@@ -666,10 +740,9 @@ class DataAnalyzer:
             if clusters > 1:
                 recommendations.append(f"**Segmentation:** Consider segmenting analysis by the {clusters} natural data clusters")
         
-        # Default recommendations
-        if not recommendations:
-            recommendations.append("**Further Analysis:** Data appears well-structured - consider advanced modeling techniques")
-            recommendations.append("**Monitoring:** Set up regular data quality monitoring")
-        
-        for rec in recommendations:
-            file_handle.write(f"- {rec}\n")
+        # Write recommendations
+        if recommendations:
+            for rec in recommendations:
+                file_handle.write(f"- {rec}\n")
+        else:
+            file_handle.write("- No specific recommendations at this time - data quality appears good\n")

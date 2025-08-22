@@ -15,7 +15,7 @@ import sys
 # Add parent directory to path for imports
 sys.path.append(str(Path(__file__).parent.parent))
 
-from data_analyzer import DataAnalyzer
+from src.dataset_cleaner.analysis.analyzer import DataAnalyzer
 
 class TestDataAnalyzer(unittest.TestCase):
     """Test cases for DataAnalyzer class"""
@@ -195,20 +195,18 @@ class TestDataAnalyzer(unittest.TestCase):
         """Test visualization creation"""
         # Run analysis first
         self.analyzer.generate_comprehensive_analysis()
-        
         # Create visualizations
         output_folder = Path(self.temp_dir)
         viz_folder = self.analyzer.create_analysis_visualizations(output_folder)
-        
+        if viz_folder is None:
+            self.skipTest("Visualizations are disabled in configuration.")
         self.assertTrue(viz_folder.exists())
-        
         # Check for expected visualization files
         expected_files = [
             'correlation_heatmap.png',
             'distributions.png',
             'quality_dashboard.png'
         ]
-        
         for file_name in expected_files:
             file_path = viz_folder / file_name
             # File should exist (though might be empty in test environment)

@@ -1,34 +1,41 @@
 #!/usr/bin/env python3
 """
-Automated Dataset Cleaner
-A tool to automatically clean CSV/Excel datasets with comprehensive reporting.
+Core Dataset Cleaner Module
+Main cleaning pipeline and orchestration logic.
 """
 
 import pandas as pd
 import numpy as np
-import argparse
-import os
 from pathlib import Path
 from sklearn.preprocessing import LabelEncoder, MinMaxScaler, StandardScaler
 from scipy import stats
 import json
 from datetime import datetime
-from data_analyzer import DataAnalyzer
-from config_manager import config
-from logger_setup import logger, PerformanceTimer, log_dataset_info, log_analysis_results
-from file_handler import file_handler
+
+from ..analysis.analyzer import DataAnalyzer
+from ..utils.config_manager import ConfigManager
+from ..utils.logger_setup import logger, PerformanceTimer, log_dataset_info
+from ..utils.file_handler import FileHandler
+
 
 class DatasetCleaner:
-    def __init__(self):
+    """Main dataset cleaning class with comprehensive cleaning pipeline"""
+    
+    def __init__(self, config_manager=None):
+        self.config = config_manager or ConfigManager()
+        self.logger = logger
+        self.file_handler = FileHandler()
         self.report = {}
         self.scaler = None
         self.label_encoders = {}
+        self.original_df = None
+        self.cleaned_df = None
     
     def load_data(self, file_path):
         """Load data from various file formats using enhanced file handler"""
-        with PerformanceTimer(logger, "Data Loading"):
-            df = file_handler.load_data(file_path)
-            log_dataset_info(logger, df, Path(file_path).stem)
+        with PerformanceTimer(self.logger, "Data Loading"):
+            df = self.file_handler.load_data(file_path)
+            log_dataset_info(self.logger, df, Path(file_path).stem)
             return df
     
     def analyze_data(self, df):
@@ -44,8 +51,9 @@ class DatasetCleaner:
         
         return self.report  
   
-    def handle_missing_values(self, df, strategy='auto', threshold=0.5):
+    def handle_missing_values(self, df, strategy='auto', threshold=None):
         """Handle missing values with various strategies"""
+        threshold = threshold or self.config.get('cleaning.missing_values.threshold', 0.5)
         missing_before = df.isnull().sum()
         
         for column in df.columns:
@@ -58,7 +66,11 @@ class DatasetCleaner:
             elif missing_ratio > 0:
                 if df[column].dtype in ['int64', 'float64']:
                     # Numeric columns: fill with median
-                    df[column] = df[column].fillna(df[column].median())
+                    fill_method = self.config.get('cleaning.missing_values.fill_numeric', 'median')
+                    if fill_method == 'mean':
+                        df[column] = df[column].fillna(df[column].mean())
+                    else:  # median
+                        df[column] = df[column].fillna(df[column].median())
                 else:
                     # Categorical columns: fill with mode
                     mode_value = df[column].mode()
@@ -75,7 +87,8 @@ class DatasetCleaner:
     def remove_duplicates(self, df):
         """Remove duplicate rows"""
         duplicates_before = df.duplicated().sum()
-        df_cleaned = df.drop_duplicates()
+        keep_method = self.config.get('cleaning.duplicates.keep', 'first')
+        df_cleaned = df.drop_duplicates(keep=keep_method)
         duplicates_after = df_cleaned.duplicated().sum()
         
         self.report['duplicates_removed'] = duplicates_before - duplicates_after
@@ -83,8 +96,11 @@ class DatasetCleaner:
         
         return df_cleaned
     
-    def detect_and_remove_outliers(self, df, method='iqr', z_threshold=3):
+    def detect_and_remove_outliers(self, df, method=None, z_threshold=3):
         """Detect and remove outliers using IQR or Z-score method"""
+        method = method or self.config.get('cleaning.outliers.method', 'iqr')
+        threshold = self.config.get('cleaning.outliers.threshold', 1.5)
+        
         numeric_columns = df.select_dtypes(include=[np.number]).columns
         outliers_removed = {}
         
@@ -93,8 +109,8 @@ class DatasetCleaner:
                 Q1 = df[column].quantile(0.25)
                 Q3 = df[column].quantile(0.75)
                 IQR = Q3 - Q1
-                lower_bound = Q1 - 1.5 * IQR
-                upper_bound = Q3 + 1.5 * IQR
+                lower_bound = Q1 - threshold * IQR
+                upper_bound = Q3 + threshold * IQR
                 
                 outliers_mask = (df[column] < lower_bound) | (df[column] > upper_bound)
             else:  # z-score method
@@ -114,8 +130,9 @@ class DatasetCleaner:
         
         return df    
 
-    def encode_categorical_variables(self, df, encoding_method='label'):
+    def encode_categorical_variables(self, df, encoding_method=None):
         """Encode categorical variables"""
+        encoding_method = encoding_method or self.config.get('cleaning.encoding.categorical_method', 'label')
         categorical_columns = df.select_dtypes(include=['object']).columns
         encoded_columns = {}
         
@@ -135,12 +152,16 @@ class DatasetCleaner:
         self.report['categorical_encoding'] = encoded_columns
         return df
     
-    def normalize_data(self, df, method='minmax'):
+    def normalize_data(self, df, method=None):
         """Normalize numeric columns"""
+        method = method or self.config.get('cleaning.normalization.method', 'minmax')
         numeric_columns = df.select_dtypes(include=[np.number]).columns
         
         if method == 'minmax':
-            self.scaler = MinMaxScaler()
+            feature_range = self.config.get('cleaning.normalization.feature_range', [0, 1])
+            if not isinstance(feature_range, tuple):
+                feature_range = tuple(feature_range)
+            self.scaler = MinMaxScaler(feature_range=feature_range)
         else:  # standardization
             self.scaler = StandardScaler()
         
@@ -151,11 +172,15 @@ class DatasetCleaner:
         
         return df
     
-    def clean_dataset(self, file_path, missing_threshold=0.5, outlier_method='iqr', 
-                     encoding_method='label', normalization_method='minmax', 
-                     perform_analysis=True):
+    def clean_dataset(self, file_path, missing_threshold=None, outlier_method=None, 
+                     encoding_method=None, normalization_method=None, 
+                     perform_analysis=None):
         """Main cleaning pipeline with optional advanced analysis"""
+        perform_analysis = perform_analysis if perform_analysis is not None else self.config.get('analysis.enable', True)
+        
+        self.logger.info(f"Starting dataset cleaning: {file_path}")
         print(f"🔄 Loading dataset: {file_path}")
+        
         original_df = self.load_data(file_path)
         df = original_df.copy()
         
@@ -185,6 +210,7 @@ class DatasetCleaner:
         self.original_df = original_df
         self.cleaned_df = df
         
+        self.logger.info("Dataset cleaning completed successfully")
         print("✅ Dataset cleaning completed!")
         return df
     
@@ -194,13 +220,13 @@ class DatasetCleaner:
         dataset_name = input_path.stem
         
         # Get folder prefix from config
-        folder_prefix = config.get_output_folder_prefix()
+        folder_prefix = self.config.get('output.folder_prefix', 'Cleans-')
         
         # Create main output folder
         output_folder = Path(f"{folder_prefix}{dataset_name}")
         output_folder.mkdir(exist_ok=True)
         
-        logger.info(f"Created output folder: {output_folder}")
+        self.logger.info(f"Created output folder: {output_folder}")
         return output_folder
     
     def generate_report(self, output_folder, dataset_name):
@@ -263,19 +289,27 @@ class DatasetCleaner:
             f.write(f"Normalization: {norm_method}\n")
             f.write(f"Normalized columns: {len(norm_cols)}\n\n")
         
+        self.logger.info(f"Reports generated: {report_file} and {summary_file}")
         print(f"📄 Reports generated: {report_file} and {summary_file}")
         return report_file, summary_file
     
     def perform_advanced_analysis(self, output_folder, dataset_name):
         """Perform advanced data analysis on cleaned dataset"""
         if not hasattr(self, 'cleaned_df') or not hasattr(self, 'original_df'):
+            self.logger.warning("No cleaned dataset available for analysis")
             print("⚠️ No cleaned dataset available for analysis")
             return None
         
+        if not self.config.get('analysis.enable', True):
+            self.logger.info("Advanced analysis disabled in configuration")
+            print("ℹ️ Advanced analysis disabled in configuration")
+            return None
+        
         print("🚀 Starting advanced data analysis...")
+        self.logger.info("Starting advanced data analysis")
         
         # Initialize analyzer with both original and cleaned data
-        analyzer = DataAnalyzer(self.cleaned_df, self.original_df)
+        analyzer = DataAnalyzer(self.cleaned_df, self.original_df, self.config)
         
         # Perform comprehensive analysis
         analysis_results = analyzer.generate_comprehensive_analysis()
@@ -303,7 +337,6 @@ class DatasetCleaner:
                     return obj.to_dict()
                 return str(obj)  # Convert everything else to string to avoid circular references
             
-            import json
             try:
                 json.dump(analysis_results, f, indent=2, default=convert_numpy)
             except Exception as e:
@@ -315,6 +348,7 @@ class DatasetCleaner:
                 }
                 json.dump(simplified_results, f, indent=2, default=convert_numpy)
         
+        self.logger.info("Advanced analysis completed successfully")
         print(f"🎉 Advanced analysis completed!")
         print(f"📊 Analysis report: {analysis_report}")
         print(f"📈 Visualizations: {viz_folder}")
@@ -326,93 +360,3 @@ class DatasetCleaner:
             'visualizations_folder': viz_folder,
             'analysis_json': analysis_json
         }
-
-
-def main():
-    parser = argparse.ArgumentParser(description='Automated Dataset Cleaner')
-    parser.add_argument('input_file', help='Path to input CSV or Excel file')
-    parser.add_argument('-o', '--output', help='Output file path (default: cleaned_<input_name>)')
-    parser.add_argument('--missing-threshold', type=float, default=0.5, 
-                       help='Threshold for dropping columns with missing values (default: 0.5)')
-    parser.add_argument('--outlier-method', choices=['iqr', 'zscore'], default='iqr',
-                       help='Method for outlier detection (default: iqr)')
-    parser.add_argument('--encoding', choices=['label', 'onehot'], default='label',
-                       help='Categorical encoding method (default: label)')
-    parser.add_argument('--normalization', choices=['minmax', 'standard'], default='minmax',
-                       help='Normalization method (default: minmax)')
-    parser.add_argument('--analysis', action='store_true', default=True,
-                       help='Perform advanced data analysis (default: True)')
-    parser.add_argument('--no-analysis', action='store_true',
-                       help='Skip advanced data analysis')
-    
-    args = parser.parse_args()
-    
-    # Generate output filename if not provided
-    if not args.output:
-        input_path = Path(args.input_file)
-        args.output = f"cleaned_{input_path.stem}{input_path.suffix}"
-    
-    try:
-        # Initialize cleaner
-        cleaner = DatasetCleaner()
-        
-        # Create organized output folder
-        input_path = Path(args.input_file)
-        dataset_name = input_path.stem
-        output_folder = cleaner.create_output_folder(args.input_file)
-        
-        print(f"📁 Created output folder: {output_folder}")
-        
-        # Clean the dataset
-        cleaned_df = cleaner.clean_dataset(
-            args.input_file,
-            missing_threshold=args.missing_threshold,
-            outlier_method=args.outlier_method,
-            encoding_method=args.encoding,
-            normalization_method=args.normalization
-        )
-        
-        # Determine output file path in the organized folder
-        if args.output:
-            # If user specified output, use it but place in organized folder
-            output_filename = Path(args.output).name
-        else:
-            # Default naming
-            output_filename = f"cleaned_{input_path.name}"
-        
-        output_file_path = output_folder / output_filename
-        
-        # Save cleaned dataset
-        if output_file_path.suffix == '.csv':
-            cleaned_df.to_csv(output_file_path, index=False)
-        else:
-            cleaned_df.to_excel(output_file_path, index=False)
-        
-        print(f"💾 Cleaned dataset saved: {output_file_path}")
-        
-        # Generate reports in organized folder
-        cleaner.generate_report(output_folder, dataset_name)
-        
-        # Perform advanced analysis if requested
-        perform_analysis = args.analysis and not args.no_analysis
-        if perform_analysis:
-            try:
-                analysis_results = cleaner.perform_advanced_analysis(output_folder, dataset_name)
-                if analysis_results:
-                    print("🔬 Advanced analysis completed with insights and visualizations!")
-            except Exception as e:
-                print(f"⚠️ Advanced analysis failed: {str(e)}")
-                print("📊 Basic cleaning reports are still available")
-        
-        print(f"\n🎉 Dataset cleaning completed successfully!")
-        print(f"📂 All files saved in: {output_folder.absolute()}")
-        
-    except Exception as e:
-        print(f"❌ Error: {str(e)}")
-        return 1
-    
-    return 0
-
-
-if __name__ == "__main__":
-    exit(main())

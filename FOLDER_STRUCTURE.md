@@ -96,3 +96,14 @@ If you have files from the old system (before folder organization):
 - New files: `Cleans-data/cleaned_data.csv`, `Cleans-data/data_cleaning_report.json`, etc.
 
 The new system is backward compatible - you can still specify custom output names, but they'll be organized in the appropriate folders.
+
+## Modular Code Structure (v2)
+
+- All core logic is in `src/dataset_cleaner/`:
+  - `core/`: Main cleaning pipeline
+  - `analysis/`: Data analysis and statistical modules
+  - `interfaces/`: CLI, Streamlit, folder watcher, chatbot
+  - `utils/`: Config, file handling, logging
+  - `advanced/`: Advanced analytics
+- Entry points are in `scripts/` (run with `python scripts/run_cleaner.py ...`)
+- Tests, configs, and docs are in their respective folders.

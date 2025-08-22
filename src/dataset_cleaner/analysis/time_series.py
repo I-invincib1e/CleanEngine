@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Time Series Analyzer for Advanced Dataset Cleaner
+Time Series Analyzer Module
 Specialized analysis for temporal data patterns, trends, and seasonality.
 """
 
@@ -52,7 +52,8 @@ class TimeSeriesAnalyzer:
                 try:
                     pd.to_datetime(self.df[col].dropna().head(100))
                     date_candidates.append((col, 'parseable'))
-                except:
+                except (ValueError, TypeError) as e:
+                    # Column cannot be parsed as datetime
                     pass
             
             # Check for date-like column names
@@ -158,7 +159,11 @@ class TimeSeriesAnalyzer:
             y = clean_data[col]
             
             # Linear regression for trend
-            slope, intercept, r_value, p_value, std_err = stats.linregress(x, y)
+            try:
+                slope, intercept, r_value, p_value, std_err = stats.linregress(x, y)
+            except Exception as e:
+                self.insights.append(f"Trend analysis failed for {col}: {str(e)}")
+                continue
             
             # Trend classification
             if p_value < 0.05:  # Significant trend
@@ -205,12 +210,20 @@ class TimeSeriesAnalyzer:
             clean_data['hour'] = clean_data[self.date_column].dt.hour
             
             # Monthly seasonality
-            monthly_stats = clean_data.groupby('month')[col].agg(['mean', 'std', 'count'])
-            monthly_cv = (monthly_stats['std'] / monthly_stats['mean']).mean()
+            try:
+                monthly_stats = clean_data.groupby('month')[col].agg(['mean', 'std', 'count'])
+                monthly_cv = (monthly_stats['std'] / monthly_stats['mean']).mean()
+            except Exception as e:
+                self.insights.append(f"Seasonality analysis failed for {col}: {str(e)}")
+                continue
             
             # Day of week seasonality
-            dow_stats = clean_data.groupby('day_of_week')[col].agg(['mean', 'std', 'count'])
-            dow_cv = (dow_stats['std'] / dow_stats['mean']).mean()
+            try:
+                dow_stats = clean_data.groupby('day_of_week')[col].agg(['mean', 'std', 'count'])
+                dow_cv = (dow_stats['std'] / dow_stats['mean']).mean()
+            except Exception as e:
+                self.insights.append(f"Seasonality analysis failed for {col}: {str(e)}")
+                continue
             
             # ANOVA test for seasonality
             monthly_groups = [group[col].values for name, group in clean_data.groupby('month') if len(group) > 1]
@@ -222,13 +235,15 @@ class TimeSeriesAnalyzer:
             if len(monthly_groups) > 1:
                 try:
                     _, monthly_p = stats.f_oneway(*monthly_groups)
-                except:
+                except Exception as e:
+                    self.insights.append(f"Seasonality analysis failed for {col}: {str(e)}")
                     pass
             
             if len(dow_groups) > 1:
                 try:
                     _, dow_p = stats.f_oneway(*dow_groups)
-                except:
+                except Exception as e:
+                    self.insights.append(f"Seasonality analysis failed for {col}: {str(e)}")
                     pass
             
             seasonality[col] = {
@@ -558,22 +573,30 @@ class TimeSeriesAnalyzer:
             fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 5))
             
             # Monthly seasonality
-            monthly_avg = clean_data.groupby('month')[col].mean()
-            ax1.bar(monthly_avg.index, monthly_avg.values)
-            ax1.set_title(f'Monthly Seasonality: {col}', fontweight='bold')
-            ax1.set_xlabel('Month')
-            ax1.set_ylabel(f'Average {col}')
-            ax1.set_xticks(range(1, 13))
+            try:
+                monthly_avg = clean_data.groupby('month')[col].mean()
+                ax1.bar(monthly_avg.index, monthly_avg.values)
+                ax1.set_title(f'Monthly Seasonality: {col}', fontweight='bold')
+                ax1.set_xlabel('Month')
+                ax1.set_ylabel(f'Average {col}')
+                ax1.set_xticks(range(1, 13))
+            except Exception as e:
+                self.insights.append(f"Seasonality plot failed for {col}: {str(e)}")
+                continue
             
             # Weekly seasonality
-            dow_avg = clean_data.groupby('day_of_week')[col].mean()
-            day_names = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-            ax2.bar(range(7), dow_avg.values)
-            ax2.set_title(f'Weekly Seasonality: {col}', fontweight='bold')
-            ax2.set_xlabel('Day of Week')
-            ax2.set_ylabel(f'Average {col}')
-            ax2.set_xticks(range(7))
-            ax2.set_xticklabels(day_names)
+            try:
+                dow_avg = clean_data.groupby('day_of_week')[col].mean()
+                day_names = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+                ax2.bar(range(7), dow_avg.values)
+                ax2.set_title(f'Weekly Seasonality: {col}', fontweight='bold')
+                ax2.set_xlabel('Day of Week')
+                ax2.set_ylabel(f'Average {col}')
+                ax2.set_xticks(range(7))
+                ax2.set_xticklabels(day_names)
+            except Exception as e:
+                self.insights.append(f"Seasonality plot failed for {col}: {str(e)}")
+                continue
             
             plt.tight_layout()
             plt.savefig(viz_folder / f'seasonality_{col}.png', dpi=300, bbox_inches='tight')

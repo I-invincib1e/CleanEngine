@@ -108,18 +108,16 @@ The tool performs the following cleaning steps:
 
 ## 📋 CLI Arguments
 
-Use the script entrypoints instead of importing modules directly:
-
 ```bash
-python scripts/run_cleaner.py <input_file> [--options]
-```
+python dataset_cleaner.py input_file [options]
 
-Options (subset used by tests/demo):
-- `-o, --output` Output folder path
-- `--missing-threshold` Threshold for dropping columns (0.1-1.0)
-- `--outlier-method` 'iqr' or 'zscore'
-- `--encoding` 'label' or 'onehot'
-- `--normalization` 'minmax' or 'standard'
+Options:
+  -o, --output              Output file path
+  --missing-threshold       Threshold for dropping columns (0.1-1.0)
+  --outlier-method         'iqr' or 'zscore'
+  --encoding               'label' or 'onehot'
+  --normalization          'minmax' or 'standard'
+```
 
 ## 📂 Organized Output Structure
 
@@ -279,15 +277,3 @@ This project is open source and available under the MIT License.
 ## 🤝 Contributing
 
 Feel free to submit issues, feature requests, or pull requests to improve the tool!
-
-## 📚 Documentation and Scripts
-
-- Canonical docs live in `docs/`
-  - `docs/README.md`, `docs/ADVANCED_FEATURES.md`, `docs/CONTRIBUTING.md`
-- Canonical entrypoints live in `scripts/`
-  - `scripts/run_cleaner.py`, `scripts/run_tests.py`, `scripts/create_sample_data.py`
-
-## 🗒️ Housekeeping
-
-- Duplicate root-level scripts/docs were removed in favor of the canonical `scripts/` and `docs/` locations.
-- A project `.gitignore` is included to ignore logs, caches, virtualenvs, data artifacts, and editor files.
