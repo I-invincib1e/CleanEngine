@@ -4,8 +4,11 @@
 [![Python](https://img.shields.io/badge/python-3.9%2B-blue)](#)
 [![License: MIT](https://img.shields.io/badge/license-MIT-yellow)](./LICENSE)
 [![CLI](https://img.shields.io/badge/CLI-Rich%20%2B%20Typer-purple)](#)
+[![Main Branch](https://img.shields.io/badge/branch-main-blue)](#)
 
 CleanEngine is a fast, modular toolkit for data cleaning, profiling, and analysis. It supports CSV/Excel/JSON/Parquet, produces reports and visualizations, and provides a YAML-driven rule engine for validation.
+
+**🚀 Current Status**: Active development on `main` branch with enhanced CLI features, advanced analytics, and modular architecture.
 
 ## ✨ Features
 - Cleaning: missing values, duplicates, outliers, encoding, normalization
