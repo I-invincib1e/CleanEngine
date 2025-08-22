@@ -98,6 +98,40 @@ python main.py -g                  # 🌐 Launch Streamlit GUI
 
 ---
 
+## 🚀 Minimal Example
+
+### Python API
+```python
+import dataset_cleaner
+print(dataset_cleaner.__version__)
+
+from dataset_cleaner.core.cleaner import DatasetCleaner
+cleaner = DatasetCleaner()
+cleaned_df = cleaner.clean_dataset('data.csv')
+cleaner.create_output_folder('data.csv')
+cleaner.save_results(cleaned_df, cleaner.report, 'Cleans-data')
+```
+
+### CLI
+```bash
+# Clean a dataset
+cleanengine clean data.csv
+
+# Clean only (no analysis)
+cleanengine clean-only data.csv
+
+# Analyze only (no cleaning)
+cleanengine analyze data.csv
+
+# Validate with rules
+yaml cleanengine validate-data data.csv
+
+# Generate a profile report
+cleanengine profile data.csv
+```
+
+---
+
 ## 🎮 CLI Commands (Typer + Rich)
 
 | Command | Short | Description | Example |

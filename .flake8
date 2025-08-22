@@ -1,0 +1,23 @@
+[flake8]
+max-line-length = 88
+extend-ignore = 
+    E203,  # whitespace before ':'
+    W503,  # line break before binary operator
+    E402,  # module level import not at top of file (for sys.path manipulation)
+    F401,  # imported but unused (for __init__.py files)
+    F841,  # local variable assigned but never used (for exception handling)
+    F541,  # f-string is missing placeholders (for future template strings)
+    W291,  # trailing whitespace
+    W293,  # blank line contains whitespace
+    E722,  # do not use bare 'except' (we use specific exceptions)
+    E741   # ambiguous variable name
+exclude = 
+    .git,
+    __pycache__,
+    build,
+    dist,
+    *.egg-info,
+    .venv,
+    venv,
+    .pytest_cache,
+    .mypy_cache
