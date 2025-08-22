@@ -397,7 +397,7 @@ class DataAnalyzer:
         try:
             if self.original_df is not None:
                 # Check if we have time series data
-                time_series_analyzer = TimeSeriesAnalyzer(self.original_df)
+                time_series_analyzer = TimeSeriesAnalyzer(self.df)
                 if time_series_analyzer.date_column:
                     show_feedback = self.config.get('analysis.show_user_feedback', True) if self.config else True
                     if show_feedback:
@@ -648,7 +648,7 @@ class DataAnalyzer:
         """Create time series visualizations if applicable"""
         try:
             if 'time_series_analysis' in self.analysis_results:
-                time_series_analyzer = TimeSeriesAnalyzer(self.original_df)
+                time_series_analyzer = TimeSeriesAnalyzer(self.df)
                 if time_series_analyzer.date_column:
                     time_series_analyzer.create_visualizations(viz_folder)
                     show_feedback = self.config.get('analysis.show_user_feedback', True) if self.config else True
