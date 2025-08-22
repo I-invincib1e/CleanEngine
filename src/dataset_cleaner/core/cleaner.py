@@ -16,6 +16,7 @@ from ..analysis.analyzer import DataAnalyzer
 from ..utils.config_manager import ConfigManager
 from ..utils.logger_setup import logger, PerformanceTimer, log_dataset_info
 from ..utils.file_handler import FileHandler
+from ..utils.rule_engine import RuleEngine
 
 
 class DatasetCleaner:
@@ -184,6 +185,13 @@ class DatasetCleaner:
         original_df = self.load_data(file_path)
         df = original_df.copy()
         
+        # Pre-clean validation via rule engine
+        if self.config.get('validation.enable', False):
+            rules = self.config.get('validation.rules', [])
+            engine = RuleEngine(rules)
+            pre_results = engine.evaluate(df)
+            self.report['validation_pre'] = pre_results
+        
         print("📊 Analyzing initial data...")
         self.analyze_data(df)
         
@@ -201,6 +209,13 @@ class DatasetCleaner:
         
         print("⚖️ Normalizing data...")
         df = self.normalize_data(df, method=normalization_method)
+        
+        # Post-clean validation via rule engine
+        if self.config.get('validation.enable', False):
+            rules = self.config.get('validation.rules', [])
+            engine = RuleEngine(rules)
+            post_results = engine.evaluate(df)
+            self.report['validation_post'] = post_results
         
         # Final statistics
         self.report['final_shape'] = df.shape
