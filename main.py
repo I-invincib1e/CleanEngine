@@ -18,6 +18,7 @@ If run without args, shows an interactive menu.
 """
 import sys
 import subprocess
+import argparse
 from pathlib import Path
 from typing import Optional
 
@@ -31,7 +32,7 @@ try:
 except Exception:
     questionary = None
 
-app = typer.Typer(add_completion=False)
+app = typer.Typer(add_completion=False, invoke_without_command=True)
 console = Console()
 
 PROJECT_ROOT = Path(__file__).parent
@@ -135,29 +136,39 @@ def show_menu() -> int:
     return 0
 
 
-# --- Global short flags ---
-@app.callback(context_settings={"allow_extra_args": True, "ignore_unknown_options": True})
-def global_shortcuts(
-    c: Optional[str] = typer.Option(None, "-c", help="Clean: input file path"),
-    t: bool = typer.Option(False, "-t", help="Run tests"),
-    s: bool = typer.Option(False, "-s", help="Create samples"),
-    g: bool = typer.Option(False, "-g", help="Launch GUI"),
-):
-    # Triggered before subcommand dispatch. If a short flag is used, execute immediately and exit.
-    if c:
-        raise typer.Exit(code=clean(c, None))
-    if t:
-        raise typer.Exit(code=tests())
-    if s:
-        raise typer.Exit(code=samples())
-    if g:
-        raise typer.Exit(code=gui())
+# Global options for short flags
+c_option: Optional[str] = None
+t_option: bool = False
+s_option: bool = False
+g_option: bool = False
 
 
 def main() -> int:
+    # Handle short flags with argparse before passing to typer
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument('-c', dest='clean_file')
+    parser.add_argument('-t', action='store_true', dest='run_tests')
+    parser.add_argument('-s', action='store_true', dest='create_samples')
+    parser.add_argument('-g', action='store_true', dest='launch_gui')
+
+    # Parse known args, ignore unknown ones (they go to typer)
+    args, remaining = parser.parse_known_args()
+
+    # Handle short flags
+    if args.clean_file:
+        return clean(args.clean_file, None)
+    if args.run_tests:
+        return tests()
+    if args.create_samples:
+        return samples()
+    if args.launch_gui:
+        return gui()
+
     # If no arguments given, show interactive menu
     if len(sys.argv) == 1:
         return show_menu()
+
+    # Pass remaining args to typer
     app()
     return 0
 
