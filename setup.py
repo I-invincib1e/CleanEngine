@@ -149,23 +149,10 @@ setup(
     extras_require=EXTRAS_REQUIRE,
     entry_points=ENTRY_POINTS,
     zip_safe=False,
-    # Additional metadata
     license="MIT",
     platforms=["any"],
-    # URLs
     download_url=f"{URL}/archive/v{VERSION}.tar.gz",
-    # Issue tracker
     bugtrack_url=f"{URL}/issues",
-    # Development status
-    development_status="4 - Beta",
-    # Minimum Python version
-    python_requires=">=3.9",
-    # Package discovery
-    packages=find_packages(where="src"),
-    package_dir={"": "src"},
-    # Include non-Python files
-    include_package_data=True,
-    # Exclude patterns
     exclude_package_data={
         "": [
             "*.pyc",

@@ -109,11 +109,11 @@ Repository = "https://github.com/I-invincib1e/CleanEngine"
 Changelog = "https://github.com/I-invincib1e/CleanEngine/blob/main/CHANGELOG.md"
 
 [project.scripts]
-cleanengine = "src.dataset_cleaner.cli:main"
-ce = "src.dataset_cleaner.cli:main"
+cleanengine = "dataset_cleaner.cli:main"
+ce = "dataset_cleaner.cli:main"
 
 [project.gui-scripts]
-cleanengine-gui = "src.dataset_cleaner.interfaces.streamlit_app:launch_streamlit"
+cleanengine-gui = "dataset_cleaner.interfaces.streamlit_app:launch_streamlit"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
