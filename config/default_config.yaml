@@ -41,6 +41,7 @@ cleaning:
 # -------------------------------
 analysis:
   enable: true
+  show_user_feedback: true
 
   statistical:
     enable: true
@@ -57,7 +58,11 @@ analysis:
     enable: true
     method: "kmeans"                # kmeans, hierarchical, dbscan
     max_clusters: 10
-
+    dbscan:
+      eps: 0.5
+      min_samples: 5
+    hierarchical:
+      n_clusters: 3
   anomaly_detection:
     enable: true
     method: "isolation_forest"      # isolation_forest, local_outlier_factor

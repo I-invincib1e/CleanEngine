@@ -1,0 +1,37 @@
+# Code Owners for CleanEngine
+# This file defines who is responsible for reviewing changes to different parts of the codebase.
+# The last matching pattern takes precedence.
+
+# Global owners - must review all changes
+* @I-invincib1e
+
+# Core cleaning and analysis logic
+/src/dataset_cleaner/core/ @I-invincib1e
+/src/dataset_cleaner/analysis/ @I-invincib1e
+
+# Configuration and utilities
+/src/dataset_cleaner/utils/ @I-invincib1e
+/config/ @I-invincib1e
+
+# User interfaces and entry points
+/src/dataset_cleaner/interfaces/ @I-invincib1e
+/scripts/ @I-invincib1e
+/main.py @I-invincib1e
+
+# Tests and quality assurance
+/tests/ @I-invincib1e
+
+# Documentation
+/docs/ @I-invincib1e
+/README.md @I-invincib1e
+/CONTRIBUTING.md @I-invincib1e
+/CODE_OF_CONDUCT.md @I-invincib1e
+/SECURITY.md @I-invincib1e
+
+# Project configuration and dependencies
+/requirements.txt @I-invincib1e
+/setup.py @I-invincib1e
+/.gitignore @I-invincib1e
+
+# License and legal
+/LICENSE @I-invincib1e

@@ -116,7 +116,14 @@ class DataAnalyzer:
         numeric_cols = self.df.select_dtypes(include=[np.number]).columns
         
         if len(numeric_cols) > 1:
-            correlation_matrix = self.df[numeric_cols].corr()
+            # Correlation method from config
+            corr_method = 'pearson'
+            if self.config:
+                corr_method = self.config.get('analysis.correlation.method', 'pearson')
+                if corr_method not in ('pearson', 'spearman', 'kendall'):
+                    corr_method = 'pearson'
+            
+            correlation_matrix = self.df[numeric_cols].corr(method=corr_method)
             
             # Get correlation threshold from config
             threshold = self.config.get('analysis.correlation.threshold', 0.7) if self.config else 0.7
@@ -134,6 +141,7 @@ class DataAnalyzer:
                         })
             
             self.analysis_results['correlation_analysis'] = {
+                'method': corr_method,
                 'correlation_matrix': correlation_matrix.to_dict(),
                 'strong_correlations': strong_correlations
             }
@@ -143,6 +151,7 @@ class DataAnalyzer:
         else:
             # Always add correlation_analysis, even if empty
             self.analysis_results['correlation_analysis'] = {
+                'method': 'pearson',
                 'correlation_matrix': {},
                 'strong_correlations': []
             }
@@ -233,6 +242,13 @@ class DataAnalyzer:
         """Perform clustering analysis"""
         numeric_cols = self.df.select_dtypes(include=[np.number]).columns
         
+        # Default empty structure for stability
+        default_result = {
+            'optimal_clusters': 0,
+            'cluster_summary': {},
+            'silhouette_score': None
+        }
+        
         if len(numeric_cols) >= 2:
             # Prepare data for clustering
             cluster_data = self.df[numeric_cols].fillna(0)
@@ -242,84 +258,161 @@ class DataAnalyzer:
                 scaler = StandardScaler()
                 scaled_data = scaler.fit_transform(cluster_data)
                 
-                # Determine optimal number of clusters using elbow method
-                max_clusters = self.config.get('analysis.clustering.max_clusters', 10) if self.config else 10
-                inertias = []
-                k_range = range(2, min(max_clusters, len(cluster_data)//2))
+                # Choose method
+                method = 'kmeans'
+                if self.config:
+                    method = self.config.get('analysis.clustering.method', 'kmeans')
                 
-                for k in k_range:
-                    kmeans = KMeans(n_clusters=k, random_state=42, n_init=10)
-                    kmeans.fit(scaled_data)
-                    inertias.append(kmeans.inertia_)
-                
-                # Find elbow point (simplified)
-                optimal_k = k_range[0]
-                if len(inertias) > 2:
-                    # Simple elbow detection
-                    diffs = np.diff(inertias)
-                    optimal_k = k_range[np.argmax(diffs)] if len(diffs) > 0 else k_range[0]
-                
-                # Perform clustering with optimal k
-                kmeans = KMeans(n_clusters=optimal_k, random_state=42, n_init=10)
-                clusters = kmeans.fit_predict(scaled_data)
-                
-                # Analyze clusters
-                cluster_summary = {}
-                for i in range(optimal_k):
-                    cluster_mask = clusters == i
-                    cluster_summary[f'cluster_{i}'] = {
-                        'size': np.sum(cluster_mask),
-                        'percentage': np.sum(cluster_mask) / len(clusters) * 100
+                if method == 'kmeans':
+                    # Determine optimal number of clusters using elbow method
+                    max_clusters = self.config.get('analysis.clustering.max_clusters', 10) if self.config else 10
+                    inertias = []
+                    k_range = range(2, min(max_clusters, max(3, len(cluster_data)//2)))
+                    
+                    for k in k_range:
+                        kmeans = KMeans(n_clusters=k, random_state=42, n_init=10)
+                        kmeans.fit(scaled_data)
+                        inertias.append(kmeans.inertia_)
+                    
+                    # Find elbow point (simplified)
+                    optimal_k = k_range.start
+                    if len(inertias) > 2:
+                        diffs = np.diff(inertias)
+                        optimal_k = list(k_range)[int(np.argmax(diffs))] if len(diffs) > 0 else k_range.start
+                    
+                    # Perform clustering with optimal k
+                    kmeans = KMeans(n_clusters=optimal_k, random_state=42, n_init=10)
+                    clusters = kmeans.fit_predict(scaled_data)
+                    
+                    # Analyze clusters
+                    cluster_summary = {}
+                    for i in range(optimal_k):
+                        cluster_mask = clusters == i
+                        cluster_summary[f'cluster_{i}'] = {
+                            'size': int(np.sum(cluster_mask)),
+                            'percentage': float(np.sum(cluster_mask) / len(clusters) * 100)
+                        }
+                    
+                    self.analysis_results['clustering_analysis'] = {
+                        'method': 'kmeans',
+                        'optimal_clusters': int(optimal_k),
+                        'cluster_summary': cluster_summary,
+                        'silhouette_score': None
                     }
+                    self.insights.append(f"Data naturally groups into {optimal_k} clusters")
+                    return
                 
-                self.analysis_results['clustering_analysis'] = {
-                    'optimal_clusters': optimal_k,
-                    'cluster_summary': cluster_summary,
-                    'silhouette_score': None  # Could add silhouette analysis
-                }
+                elif method == 'dbscan':
+                    from sklearn.cluster import DBSCAN
+                    eps = self.config.get('analysis.clustering.dbscan.eps', 0.5) if self.config else 0.5
+                    min_samples = self.config.get('analysis.clustering.dbscan.min_samples', 5) if self.config else 5
+                    db = DBSCAN(eps=eps, min_samples=min_samples).fit(scaled_data)
+                    labels = db.labels_
+                    # Count clusters excluding noise (-1)
+                    valid_labels = [l for l in labels if l != -1]
+                    n_clusters = len(set(valid_labels))
+                    
+                    cluster_summary = {}
+                    for lbl in sorted(set(labels)):
+                        size = int(np.sum(labels == lbl))
+                        key = 'noise' if lbl == -1 else f'cluster_{lbl}'
+                        cluster_summary[key] = {
+                            'size': size,
+                            'percentage': float(size / len(labels) * 100)
+                        }
+                    
+                    self.analysis_results['clustering_analysis'] = {
+                        'method': 'dbscan',
+                        'optimal_clusters': int(n_clusters),
+                        'cluster_summary': cluster_summary,
+                        'silhouette_score': None
+                    }
+                    if n_clusters > 0:
+                        self.insights.append(f"DBSCAN discovered {n_clusters} clusters (plus noise)")
+                    return
                 
-                self.insights.append(f"Data naturally groups into {optimal_k} clusters")
-                return
+                elif method == 'hierarchical':
+                    from sklearn.cluster import AgglomerativeClustering
+                    n_clusters = self.config.get('analysis.clustering.hierarchical.n_clusters', 3) if self.config else 3
+                    model = AgglomerativeClustering(n_clusters=int(n_clusters))
+                    labels = model.fit_predict(scaled_data)
+                    
+                    cluster_summary = {}
+                    for i in range(int(n_clusters)):
+                        size = int(np.sum(labels == i))
+                        cluster_summary[f'cluster_{i}'] = {
+                            'size': size,
+                            'percentage': float(size / len(labels) * 100)
+                        }
+                    
+                    self.analysis_results['clustering_analysis'] = {
+                        'method': 'hierarchical',
+                        'optimal_clusters': int(n_clusters),
+                        'cluster_summary': cluster_summary,
+                        'silhouette_score': None
+                    }
+                    self.insights.append(f"Hierarchical clustering formed {n_clusters} clusters")
+                    return
         
-        # Default empty structure when not applicable
-        self.analysis_results['clustering_analysis'] = {
-            'optimal_clusters': 0,
-            'cluster_summary': {},
-            'silhouette_score': None
-        }
+        # Default when not applicable
+        self.analysis_results['clustering_analysis'] = default_result
     
     def anomaly_detection(self):
         """Detect anomalies in the dataset"""
         numeric_cols = self.df.select_dtypes(include=[np.number]).columns
         
-        if len(numeric_cols) > 0:
-            # Use Isolation Forest for anomaly detection
-            anomaly_data = self.df[numeric_cols].fillna(0)
-            
-            if len(anomaly_data) > 10:
-                contamination = self.config.get('analysis.anomaly_detection.contamination', 0.1) if self.config else 0.1
-                iso_forest = IsolationForest(contamination=contamination, random_state=42)
-                anomaly_labels = iso_forest.fit_predict(anomaly_data)
-                
-                anomaly_count = np.sum(anomaly_labels == -1)
-                anomaly_percentage = anomaly_count / len(anomaly_labels) * 100
-                
-                self.analysis_results['anomaly_detection'] = {
-                    'total_anomalies': anomaly_count,
-                    'anomaly_percentage': anomaly_percentage,
-                    'anomaly_threshold': 10.0  # 10% threshold
-                }
-                
-                if anomaly_percentage > 5:
-                    self.insights.append(f"High anomaly rate detected: {anomaly_percentage:.1f}% of data points")
-                return
-        
-        # Default empty structure when not applicable
-        self.analysis_results['anomaly_detection'] = {
+        # Default result for stability
+        default_result = {
             'total_anomalies': 0,
             'anomaly_percentage': 0.0,
             'anomaly_threshold': 10.0
         }
+        
+        if len(numeric_cols) > 0:
+            anomaly_data = self.df[numeric_cols].fillna(0)
+            
+            if len(anomaly_data) > 10:
+                method = 'isolation_forest'
+                if self.config:
+                    method = self.config.get('analysis.anomaly_detection.method', 'isolation_forest')
+                
+                if method == 'isolation_forest':
+                    contamination = self.config.get('analysis.anomaly_detection.contamination', 0.1) if self.config else 0.1
+                    iso_forest = IsolationForest(contamination=contamination, random_state=42)
+                    anomaly_labels = iso_forest.fit_predict(anomaly_data)
+                    anomaly_count = int(np.sum(anomaly_labels == -1))
+                    anomaly_percentage = float(anomaly_count / len(anomaly_labels) * 100)
+                    
+                    self.analysis_results['anomaly_detection'] = {
+                        'method': 'isolation_forest',
+                        'total_anomalies': anomaly_count,
+                        'anomaly_percentage': anomaly_percentage,
+                        'anomaly_threshold': 10.0
+                    }
+                    if anomaly_percentage > 5:
+                        self.insights.append(f"High anomaly rate detected: {anomaly_percentage:.1f}% of data points")
+                    return
+                
+                elif method == 'lof':
+                    from sklearn.neighbors import LocalOutlierFactor
+                    contamination = self.config.get('analysis.anomaly_detection.contamination', 0.1) if self.config else 0.1
+                    lof = LocalOutlierFactor(n_neighbors=20, contamination=contamination)
+                    labels = lof.fit_predict(anomaly_data)
+                    anomaly_count = int(np.sum(labels == -1))
+                    anomaly_percentage = float(anomaly_count / len(labels) * 100)
+                    
+                    self.analysis_results['anomaly_detection'] = {
+                        'method': 'lof',
+                        'total_anomalies': anomaly_count,
+                        'anomaly_percentage': anomaly_percentage,
+                        'anomaly_threshold': 10.0
+                    }
+                    if anomaly_percentage > 5:
+                        self.insights.append(f"High anomaly rate detected (LOF): {anomaly_percentage:.1f}% of data points")
+                    return
+        
+        # Default when not applicable
+        self.analysis_results['anomaly_detection'] = default_result
     
     def data_quality_assessment(self):
         """Assess overall data quality"""
@@ -397,7 +490,7 @@ class DataAnalyzer:
         try:
             if self.original_df is not None:
                 # Check if we have time series data
-                time_series_analyzer = TimeSeriesAnalyzer(self.original_df)
+                time_series_analyzer = TimeSeriesAnalyzer(self.df)
                 if time_series_analyzer.date_column:
                     show_feedback = self.config.get('analysis.show_user_feedback', True) if self.config else True
                     if show_feedback:
@@ -648,7 +741,7 @@ class DataAnalyzer:
         """Create time series visualizations if applicable"""
         try:
             if 'time_series_analysis' in self.analysis_results:
-                time_series_analyzer = TimeSeriesAnalyzer(self.original_df)
+                time_series_analyzer = TimeSeriesAnalyzer(self.df)
                 if time_series_analyzer.date_column:
                     time_series_analyzer.create_visualizations(viz_folder)
                     show_feedback = self.config.get('analysis.show_user_feedback', True) if self.config else True
