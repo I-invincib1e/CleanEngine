@@ -87,7 +87,7 @@ def s_alias() -> int:
 
 @app.command('c')
 def c_alias(input: str = typer.Argument(...), output: Optional[str] = typer.Argument(None)) -> int:
-    return clean(input, output)  # type: ignore[arg-type]
+    return clean(input, output)
 
 
 @app.command('g')
@@ -127,7 +127,7 @@ def show_menu() -> int:
         file_path = questionary.path("Select a CSV/Excel file:").ask()
         if not file_path:
             return 1
-        return clean(file_path)  # type: ignore[arg-type]
+        return clean(file_path)
     if choice == "Run tests":
         return tests()
     if choice == "Launch GUI":
@@ -145,7 +145,7 @@ def global_shortcuts(
 ):
     # Triggered before subcommand dispatch. If a short flag is used, execute immediately and exit.
     if c:
-        raise typer.Exit(code=clean(c))
+        raise typer.Exit(code=clean(c, None))
     if t:
         raise typer.Exit(code=tests())
     if s:
