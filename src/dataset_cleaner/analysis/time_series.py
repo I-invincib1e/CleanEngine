@@ -473,6 +473,15 @@ class TimeSeriesAnalyzer:
         print(f"📈 Time series visualizations saved in: {viz_folder}")
         return viz_folder
     
+    # --- Adapters for compatibility with analyzer expectations ---
+    def comprehensive_analysis(self):
+        """Adapter: alias for comprehensive_time_series_analysis()."""
+        return self.comprehensive_time_series_analysis()
+    
+    def create_visualizations(self, output_folder):
+        """Adapter: alias for create_time_series_visualizations()."""
+        return self.create_time_series_visualizations(output_folder)
+    
     def _create_time_series_plots(self, viz_folder):
         """Create basic time series plots"""
         n_cols = min(2, len(self.value_columns))
