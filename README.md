@@ -1,6 +1,38 @@
 # 🧹 Automated Dataset Cleaner
 
+[![Tests](https://img.shields.io/badge/tests-36%20passing-brightgreen)](./scripts/run_tests.py)
+[![Python](https://img.shields.io/badge/python-3.9%2B-blue)](#)
+[![License: MIT](https://img.shields.io/badge/license-MIT-yellow)](./LICENSE)
+[![UI](https://img.shields.io/badge/CLI-Rich%20%2B%20Typer-purple)](#)
+
 A comprehensive Python tool for automatically cleaning CSV and Excel datasets with detailed reporting and multiple interfaces (CLI, GUI, and automation).
+
+## 🚀 Quick Start
+
+```bash
+# 1) Install dependencies (standalone)
+python setup.py
+
+# 2) Interactive menu (colorful)
+python main.py
+
+# 3) Short commands
+python main.py -s                  # create sample datasets
+python main.py -c sample_mixed.csv # clean a dataset
+python main.py -t                  # run tests
+python main.py -g                  # launch Streamlit GUI
+```
+
+### CLI at a glance
+
+| Action | Long Command | Short Command |
+|-------|---------------|---------------|
+| Create samples | `python main.py samples` | `python main.py -s` or `python main.py s` |
+| Clean dataset | `python main.py clean <file> [out]` | `python main.py -c <file> [out]` or `python main.py c <file> [out]` |
+| Run tests | `python main.py tests` | `python main.py -t` or `python main.py t` |
+| Launch GUI | `python main.py gui` | `python main.py -g` or `python main.py g` |
+
+Note: `setup` is no longer a CLI command; use `python setup.py` directly.
 
 ## ✨ Features
 
@@ -36,8 +68,6 @@ A comprehensive Python tool for automatically cleaning CSV and Excel datasets wi
 
 ## 🗂️ Modular Project Structure (v2)
 
-The project is now fully modularized for maintainability and scalability:
-
 ```
 AD Cleaner/
 ├── src/
@@ -56,25 +86,12 @@ AD Cleaner/
 ├── docs/
 ├── logs/
 ├── requirements.txt
-└── README.md
+├── setup.py
+└── main.py
 ```
 
 - All main logic is under `src/dataset_cleaner/`.
-- Entry points are in `scripts/` (run with `python scripts/run_cleaner.py ...`).
-- Tests, configs, and docs are in their respective folders.
-
-## 🚀 Usage (Modular)
-
-```bash
-# Clean a dataset
-python scripts/run_cleaner.py data.csv
-
-# Run all tests
-python scripts/run_tests.py
-
-# Create sample data
-python scripts/create_sample_data.py
-```
+- Entry points are in `main.py` (friendly CLI) and `scripts/` for direct runners.
 
 ## 🛠️ Cleaning Pipeline
 

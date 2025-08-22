@@ -215,6 +215,19 @@ class DataAnalyzer:
                 if sorted_features:
                     top_feature = sorted_features[0][0]
                     self.insights.append(f"Most important feature for predicting {target_col}: {top_feature}")
+            else:
+                self.analysis_results['feature_importance'] = {
+                    'target_variable': None,
+                    'feature_scores': {},
+                    'top_features': []
+                }
+        else:
+            # Default empty structure when not applicable
+            self.analysis_results['feature_importance'] = {
+                'target_variable': None,
+                'feature_scores': {},
+                'top_features': []
+            }
     
     def clustering_analysis(self):
         """Perform clustering analysis"""
@@ -266,6 +279,14 @@ class DataAnalyzer:
                 }
                 
                 self.insights.append(f"Data naturally groups into {optimal_k} clusters")
+                return
+        
+        # Default empty structure when not applicable
+        self.analysis_results['clustering_analysis'] = {
+            'optimal_clusters': 0,
+            'cluster_summary': {},
+            'silhouette_score': None
+        }
     
     def anomaly_detection(self):
         """Detect anomalies in the dataset"""
@@ -291,6 +312,14 @@ class DataAnalyzer:
                 
                 if anomaly_percentage > 5:
                     self.insights.append(f"High anomaly rate detected: {anomaly_percentage:.1f}% of data points")
+                return
+        
+        # Default empty structure when not applicable
+        self.analysis_results['anomaly_detection'] = {
+            'total_anomalies': 0,
+            'anomaly_percentage': 0.0,
+            'anomaly_threshold': 10.0
+        }
     
     def data_quality_assessment(self):
         """Assess overall data quality"""
