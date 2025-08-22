@@ -7,6 +7,7 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 import random
+from pathlib import Path
 
 def create_time_series_sample():
     """Create a sample time series dataset"""
@@ -136,23 +137,45 @@ def create_mixed_sample():
     
     return df
 
+def create_sample_datasets(output_dir: Path, count: int = 3) -> list[Path]:
+    """Create sample datasets in the specified output directory"""
+    output_dir = Path(output_dir)
+    output_dir.mkdir(exist_ok=True)
+    
+    created_files = []
+    
+    # Create time series sample
+    if count >= 1:
+        ts_data = create_time_series_sample()
+        ts_file = output_dir / 'sample_timeseries.csv'
+        ts_data.to_csv(ts_file, index=False)
+        created_files.append(ts_file)
+    
+    # Create statistical sample
+    if count >= 2:
+        stat_data = create_statistical_sample()
+        stat_file = output_dir / 'sample_statistical.csv'
+        stat_data.to_csv(stat_file, index=False)
+        created_files.append(stat_file)
+    
+    # Create mixed sample
+    if count >= 3:
+        mixed_data = create_mixed_sample()
+        mixed_file = output_dir / 'sample_mixed.csv'
+        mixed_data.to_csv(mixed_file, index=False)
+        created_files.append(mixed_file)
+    
+    return created_files
+
 if __name__ == "__main__":
     print("🔧 Creating sample datasets...")
     
-    # Create time series sample
-    ts_data = create_time_series_sample()
-    ts_data.to_csv('sample_timeseries.csv', index=False)
-    print(f"✅ Time series sample created: {ts_data.shape}")
+    # Create sample datasets in current directory
+    created_files = create_sample_datasets(Path("."), 3)
     
-    # Create statistical sample
-    stat_data = create_statistical_sample()
-    stat_data.to_csv('sample_statistical.csv', index=False)
-    print(f"✅ Statistical sample created: {stat_data.shape}")
-    
-    # Create mixed sample
-    mixed_data = create_mixed_sample()
-    mixed_data.to_csv('sample_mixed.csv', index=False)
-    print(f"✅ Mixed sample created: {mixed_data.shape}")
+    print(f"\n📊 Created {len(created_files)} sample datasets:")
+    for file_path in created_files:
+        print(f"  ✅ {file_path.name}")
     
     print("\n📊 Sample datasets ready for testing!")
     print("- sample_timeseries.csv: Time series data with trends and seasonality")

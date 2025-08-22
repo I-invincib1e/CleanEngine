@@ -1,32 +1,33 @@
 """
-Advanced Dataset Cleaner
-A comprehensive data analysis and cleaning platform.
+CleanEngine - The Ultimate Data Cleaning & Analysis Toolkit
 
-This package provides:
-- Smart data cleaning with multiple strategies
-- Advanced statistical analysis and insights
-- Time series analysis capabilities
-- Professional visualizations and reporting
-- Multiple user interfaces (CLI, GUI, API)
+A fast, modular toolkit for data cleaning, profiling, and analysis.
+Supports CSV/Excel/JSON/Parquet, produces reports and visualizations,
+and provides a YAML-driven rule engine for validation.
 """
 
-__version__ = "2.0.0"
-__author__ = "Advanced Dataset Cleaner Team"
-__email__ = "dataset-cleaner@example.com"
+__version__ = "0.1.0"
+__author__ = "CleanEngine Community"
+__email__ = "contact@cleanengine.com"
+__url__ = "https://github.com/I-invincib1e/CleanEngine"
+__license__ = "MIT"
 
-# Import main classes for easy access
+# Main imports
 from .core.cleaner import DatasetCleaner
 from .analysis.analyzer import DataAnalyzer
-from .analysis.time_series import TimeSeriesAnalyzer
-from .analysis.statistical_tests import StatisticalTester
 from .utils.config_manager import ConfigManager
 from .utils.file_handler import FileHandler
+from .utils.rule_engine import RuleEngine
 
 __all__ = [
-    'DatasetCleaner',
-    'DataAnalyzer', 
-    'TimeSeriesAnalyzer',
-    'StatisticalTester',
-    'ConfigManager',
-    'FileHandler'
+    "DatasetCleaner",
+    "DataAnalyzer", 
+    "ConfigManager",
+    "FileHandler",
+    "RuleEngine",
+    "__version__",
+    "__author__",
+    "__email__",
+    "__url__",
+    "__license__",
 ]

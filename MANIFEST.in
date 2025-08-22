@@ -1,0 +1,80 @@
+# Include README and license
+include README.md
+include LICENSE
+include CHANGELOG.md
+include CONTRIBUTING.md
+include CODE_OF_CONDUCT.md
+include CODEOWNERS
+include SECURITY.md
+
+# Include configuration files
+include config/*.yaml
+include config/*.yml
+
+# Include requirements
+include requirements.txt
+
+# Include setup files
+include setup.py
+include pyproject.toml
+
+# Include documentation
+recursive-include docs *.md *.rst *.txt *.html *.css *.js
+
+# Include examples
+recursive-include examples *.py *.ipynb *.csv *.json *.yaml *.yml
+
+# Include test data
+recursive-include tests *.py *.csv *.json *.yaml *.yml
+
+# Include source code
+recursive-include src *.py *.pyi *.h *.c *.cpp *.hpp
+
+# Exclude common unwanted files
+global-exclude *.pyc
+global-exclude *.pyo
+global-exclude *.pyd
+global-exclude __pycache__
+global-exclude *.so
+global-exclude *.dll
+global-exclude *.dylib
+global-exclude .DS_Store
+global-exclude Thumbs.db
+global-exclude *.log
+global-exclude *.tmp
+global-exclude *.bak
+global-exclude *.swp
+global-exclude *.swo
+global-exclude *~
+
+# Exclude build and distribution directories
+global-exclude build/
+global-exclude dist/
+global-exclude *.egg-info/
+global-exclude .eggs/
+global-exclude .tox/
+global-exclude .pytest_cache/
+global-exclude .coverage
+global-exclude htmlcov/
+global-exclude .mypy_cache/
+global-exclude .venv/
+global-exclude venv/
+global-exclude env/
+global-exclude .env/
+
+# Exclude IDE and editor files
+global-exclude .vscode/
+global-exclude .idea/
+global-exclude *.sublime-*
+global-exclude .editorconfig
+
+# Exclude git files
+global-exclude .git/
+global-exclude .gitignore
+global-exclude .gitattributes
+
+# Exclude CI/CD files
+global-exclude .github/
+global-exclude .gitlab-ci.yml
+global-exclude .travis.yml
+global-exclude appveyor.yml

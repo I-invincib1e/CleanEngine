@@ -375,3 +375,29 @@ class DatasetCleaner:
             'visualizations_folder': viz_folder,
             'analysis_json': analysis_json
         }
+    
+    def save_results(self, cleaned_df, report, output_folder):
+        """Save cleaned data and reports to the output folder"""
+        output_folder = Path(output_folder)
+        output_folder.mkdir(exist_ok=True)
+        
+        # Save cleaned data
+        cleaned_data_file = output_folder / "cleaned_data.csv"
+        cleaned_df.to_csv(cleaned_data_file, index=False)
+        
+        # Generate and save reports
+        dataset_name = output_folder.name.replace('Cleans-', '')
+        report_file, summary_file = self.generate_report(output_folder, dataset_name)
+        
+        # Save cleaning report as JSON
+        cleaning_report_file = output_folder / "cleaning_report.json"
+        with open(cleaning_report_file, 'w') as f:
+            json.dump(report, f, indent=2, default=str)
+        
+        self.logger.info(f"Results saved to: {output_folder}")
+        print(f"💾 Results saved to: {output_folder}")
+        print(f"  📊 Cleaned data: {cleaned_data_file}")
+        print(f"  📋 Cleaning report: {cleaning_report_file}")
+        print(f"  📄 Summary report: {summary_file}")
+        
+        return output_folder
