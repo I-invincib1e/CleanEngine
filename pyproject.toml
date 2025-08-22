@@ -7,7 +7,7 @@ name = "cleanengine"
 version = "0.1.0"
 description = "The Ultimate Data Cleaning & Analysis Toolkit"
 readme = "README.md"
-license = {text = "MIT"}
+license = "MIT"
 authors = [
     {name = "CleanEngine Community", email = "contact@cleanengine.com"}
 ]
@@ -41,7 +41,7 @@ classifiers = [
     "Intended Audience :: Developers",
     "Intended Audience :: Data Scientists", 
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: MIT License",
+
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.9",

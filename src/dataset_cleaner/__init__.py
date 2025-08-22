@@ -12,16 +12,17 @@ __email__ = "contact@cleanengine.com"
 __url__ = "https://github.com/I-invincib1e/CleanEngine"
 __license__ = "MIT"
 
+from .analysis.analyzer import DataAnalyzer
+
 # Main imports
 from .core.cleaner import DatasetCleaner
-from .analysis.analyzer import DataAnalyzer
 from .utils.config_manager import ConfigManager
 from .utils.file_handler import FileHandler
 from .utils.rule_engine import RuleEngine
 
 __all__ = [
     "DatasetCleaner",
-    "DataAnalyzer", 
+    "DataAnalyzer",
     "ConfigManager",
     "FileHandler",
     "RuleEngine",

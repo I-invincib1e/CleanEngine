@@ -5,20 +5,25 @@ CleanEngine - The Ultimate Data Cleaning & Analysis Toolkit
 
 import os
 import sys
-from setuptools import setup, find_packages
 from pathlib import Path
+
+from setuptools import find_packages, setup
 
 # Read the README file for long description
 this_directory = Path(__file__).parent
 long_description = (this_directory / "README.md").read_text(encoding="utf-8")
+
 
 # Read requirements from requirements.txt
 def read_requirements():
     requirements_path = this_directory / "requirements.txt"
     if requirements_path.exists():
         with open(requirements_path, "r", encoding="utf-8") as f:
-            return [line.strip() for line in f if line.strip() and not line.startswith("#")]
+            return [
+                line.strip() for line in f if line.strip() and not line.startswith("#")
+            ]
     return []
+
 
 # Package metadata
 PACKAGE_NAME = "cleanengine"

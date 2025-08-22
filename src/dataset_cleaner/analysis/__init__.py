@@ -3,7 +3,7 @@ Advanced data analysis modules.
 """
 
 from .analyzer import DataAnalyzer
-from .time_series import TimeSeriesAnalyzer
 from .statistical_tests import StatisticalTester
+from .time_series import TimeSeriesAnalyzer
 
-__all__ = ['DataAnalyzer', 'TimeSeriesAnalyzer', 'StatisticalTester']
+__all__ = ["DataAnalyzer", "TimeSeriesAnalyzer", "StatisticalTester"]
