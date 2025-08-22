@@ -98,6 +98,21 @@ python main.py -g                  # 🌐 Launch Streamlit GUI
 
 ---
 
+## 🚀 Minimal Example
+
+```python
+import dataset_cleaner
+print(dataset_cleaner.__version__)
+
+from dataset_cleaner.core.cleaner import DatasetCleaner
+cleaner = DatasetCleaner()
+cleaned_df = cleaner.clean_dataset('data.csv')
+cleaner.create_output_folder('data.csv')
+cleaner.save_results(cleaned_df, cleaner.report, 'Cleans-data')
+```
+
+---
+
 ## 🎮 CLI Commands (Typer + Rich)
 
 | Command | Short | Description | Example |
