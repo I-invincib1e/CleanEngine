@@ -27,7 +27,7 @@ def read_requirements():
 
 # Package metadata
 PACKAGE_NAME = "cleanengine"
-VERSION = "0.1.0"
+VERSION = "0.1.1"
 DESCRIPTION = "The Ultimate Data Cleaning & Analysis Toolkit"
 AUTHOR = "CleanEngine Community"
 AUTHOR_EMAIL = "contact@cleanengine.com"
@@ -115,8 +115,8 @@ EXTRAS_REQUIRE = {
 # Entry points for CLI
 ENTRY_POINTS = {
     "console_scripts": [
-        "cleanengine=src.dataset_cleaner.cli:main",
-        "ce=src.dataset_cleaner.cli:main",  # Short alias
+        "cleanengine=dataset_cleaner.cli:main",
+        "ce=dataset_cleaner.cli:main",  # Short alias
     ],
 }
 
