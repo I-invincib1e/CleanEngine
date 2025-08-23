@@ -16,6 +16,20 @@ CleanEngine is a powerful command-line toolkit that handles missing values, remo
 
 ![CleanEngine Demo](https://img.shields.io/badge/demo-available-blue)
 
+### 📊 **Comparison with Other Tools**
+
+| Feature | **CleanEngine** 🧹 | pandas-profiling | Sweetviz | Great Expectations |
+|---------|-------------------|------------------|-----------|-------------------|
+| **Data Cleaning** | ✅ **Complete Pipeline** | ❌ No | ❌ No | ⚠️ Limited |
+| **Profiling & Stats** | ✅ **Advanced Analytics** | ✅ Yes | ✅ Yes | ⚠️ Minimal |
+| **Correlation Analysis** | ✅ **Multi-Method** | ✅ Yes | ✅ Yes | ❌ No |
+| **Feature Importance** | ✅ **ML-Powered** | ❌ No | ❌ No | ❌ No |
+| **Clustering & Patterns** | ✅ **3 Algorithms** | ❌ No | ❌ No | ❌ No |
+| **Anomaly Detection** | ✅ **2 Methods** | ❌ No | ❌ No | ❌ No |
+| **Rule Engine** | ✅ **YAML-Driven** | ❌ No | ❌ No | ✅ Yes |
+| **Interfaces** | ✅ **CLI + GUI + Watcher** | CLI/Notebook | Notebook | CLI/Notebook |
+| **Automation** | ✅ **Folder Watcher** | ❌ No | ❌ No | ✅ Yes |
+
 ---
 
 ## 🚀 Installation
@@ -66,27 +80,27 @@ cleanengine gui
 ## 📋 CLI Commands
 
 ### Core Commands
-| Command | Description | Example |
-|---------|-------------|---------|
-| `clean` | Clean a dataset with full pipeline | `cleanengine clean data.csv` |
-| `analyze` | Analyze data without cleaning | `cleanengine analyze data.csv` |
-| `validate-data` | Validate data with rules | `cleanengine validate-data data.csv` |
-| `profile` | Generate data profile report | `cleanengine profile data.csv` |
-| `clean-only` | Clean without analysis | `cleanengine clean-only data.csv` |
-| `samples` | Create sample datasets | `cleanengine samples` |
-| `test` | Run test suite | `cleanengine test` |
-| `gui` | Launch Streamlit web interface | `cleanengine gui` |
-| `info` | Show CleanEngine information | `cleanengine info` |
+| Command | Flags | Description | Example |
+|---------|-------|-------------|---------|
+| `clean` | `--output, -o`, `--verbose, -v`, `--force` | Clean a dataset with full pipeline | `cleanengine clean data.csv --output ./cleaned/ --verbose` |
+| `analyze` | `--output, -o`, `--verbose, -v` | Analyze data without cleaning | `cleanengine analyze data.csv --output ./analysis/ --verbose` |
+| `validate-data` | `--verbose, -v` | Validate data with rules | `cleanengine validate-data data.csv --verbose` |
+| `profile` | `--output, -o`, `--verbose, -v` | Generate data profile report | `cleanengine profile data.csv --output ./profile/ --verbose` |
+| `clean-only` | `--output, -o`, `--verbose, -v` | Clean without analysis | `cleanengine clean-only data.csv --output ./cleaned/ --verbose` |
+| `samples` | `--output, -o`, `--count, -n`, `--verbose, -v` | Create sample datasets | `cleanengine samples --output ./samples/ --count 5 --verbose` |
+| `test` | `--verbose, -v`, `--coverage` | Run test suite | `cleanengine test --verbose --coverage` |
+| `gui` | `--port, -p`, `--host, -h` | Launch Streamlit web interface | `cleanengine gui --port 8501 --host localhost` |
+| `info` | None | Show CleanEngine information | `cleanengine info` |
 
 ### Advanced Analysis Commands
-| Command | Description | Example |
-|---------|-------------|---------|
-| `correlations` | Analyze variable correlations | `cleanengine correlations data.csv --method pearson --threshold 0.7` |
-| `features` | Analyze feature importance | `cleanengine features data.csv` |
-| `clusters` | Discover data clusters | `cleanengine clusters data.csv --method kmeans` |
-| `anomalies` | Detect anomalies/outliers | `cleanengine anomalies data.csv --method isolation_forest` |
-| `quality` | Assess data quality | `cleanengine quality data.csv` |
-| `statistics` | Perform statistical analysis | `cleanengine statistics data.csv` |
+| Command | Flags | Description | Example |
+|---------|-------|-------------|---------|
+| `correlations` | `--method, -m`, `--threshold, -t`, `--output, -o`, `--verbose, -v` | Analyze variable correlations | `cleanengine correlations data.csv --method pearson --threshold 0.7 --verbose` |
+| `features` | `--output, -o`, `--verbose, -v` | Analyze feature importance | `cleanengine features data.csv --output ./features/ --verbose` |
+| `clusters` | `--method, -m`, `--output, -o`, `--verbose, -v` | Discover data clusters | `cleanengine clusters data.csv --method kmeans --output ./clusters/ --verbose` |
+| `anomalies` | `--method, -m`, `--contamination, -c`, `--output, -o`, `--verbose, -v` | Detect anomalies/outliers | `cleanengine anomalies data.csv --method isolation_forest --contamination 0.1 --verbose` |
+| `quality` | `--output, -o`, `--verbose, -v` | Assess data quality | `cleanengine quality data.csv --output ./quality/ --verbose` |
+| `statistics` | `--output, -o`, `--verbose, -v` | Perform statistical analysis | `cleanengine statistics data.csv --output ./stats/ --verbose` |
 
 ---
 
