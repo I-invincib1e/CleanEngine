@@ -7,7 +7,9 @@
 [![Python](https://img.shields.io/badge/python-3.9%2B-blue)](#)
 [![License: MIT](https://img.shields.io/badge/license-MIT-yellow)](./LICENSE)
 [![Tests](https://img.shields.io/badge/tests-passing-brightgreen)](#)
-[![Downloads](https://img.shields.io/pypi/dm/cleanengine)](https://pypi.org/project/cleanengine/)
+[![PyPI](https://img.shields.io/pypi/v/cleanengine)](https://pypi.org/project/cleanengine/)
+[![Python versions](https://img.shields.io/pypi/pyversions/cleanengine)](https://pypi.org/project/cleanengine/)
+
 
 > **🚀 The Ultimate Data Cleaning & Analysis CLI Tool**  
 > Transform messy datasets into clean, insights-rich data with intelligent cleaning and advanced ML analysis.
