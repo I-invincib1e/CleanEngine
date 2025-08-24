@@ -6,7 +6,7 @@ Supports CSV/Excel/JSON/Parquet, produces reports and visualizations,
 and provides a YAML-driven rule engine for validation.
 """
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 __author__ = "CleanEngine Community"
 __email__ = "contact@cleanengine.com"
 __url__ = "https://github.com/I-invincib1e/CleanEngine"

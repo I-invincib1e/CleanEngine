@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "cleanengine"
-version = "0.1.1"
+version = "0.1.2"
 description = "The Ultimate Data Cleaning & Analysis Toolkit"
 readme = "README.md"
 license = "MIT"
@@ -114,13 +114,15 @@ ce = "dataset_cleaner.cli:main"
 cleanengine-gui = "dataset_cleaner.interfaces.streamlit_app:launch_streamlit"
 
 [tool.setuptools]
-package-dir = {"" = "src"}
+package-dir = {"" = "src", "scripts" = "scripts"}
 
 [tool.setuptools.packages.find]
-where = ["src"]
+where = ["src", "."]
+include = ["dataset_cleaner*", "scripts*"]
 
 [tool.setuptools.package-data]
 "dataset_cleaner" = ["config/*.yaml", "config/*.yml", "*.py"]
+"scripts" = ["*.py"]
 
 [tool.setuptools.exclude-package-data]
 "*" = ["*.pyc", "*.pyo", "*.pyd", "__pycache__", "*.so", "*.dll", "*.dylib"]
