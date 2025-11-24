@@ -309,36 +309,38 @@ class FileHandler:
                 return validation_results
 
             # Check file size
-            if file_info["file_size_mb"] > 100:  # 100MB threshold
+            if file_info["file_size_mb"] > 100:
                 validation_results["warnings"].append(
                     f"Large file size: {file_info['file_size_mb']:.1f}MB"
                 )
 
             # Check data quality
-            if file_info["rows"] == 0:
+            if file_info.get("rows", 0) == 0:
                 validation_results["errors"].append("File contains no data rows")
                 return validation_results
 
-            if file_info["columns"] == 0:
+            if file_info.get("columns", 0) == 0:
                 validation_results["errors"].append("File contains no columns")
                 return validation_results
 
             # Check for high missing values
-            total_cells = file_info["rows"] * file_info["columns"]
-            total_missing = sum(file_info["missing_values"].values())
-            missing_percentage = (total_missing / total_cells) * 100
+            if file_info.get("rows", 0) > 0 and file_info.get("columns", 0) > 0:
+                total_cells = file_info["rows"] * file_info["columns"]
+                total_missing = sum(file_info.get("missing_values", {}).values())
+                missing_percentage = (total_missing / total_cells) * 100
 
-            if missing_percentage > 50:
-                validation_results["warnings"].append(
-                    f"High missing values: {missing_percentage:.1f}%"
-                )
+                if missing_percentage > 50:
+                    validation_results["warnings"].append(
+                        f"High missing values: {missing_percentage:.1f}%"
+                    )
 
-            # Check for high duplicates
-            duplicate_percentage = (file_info["duplicates"] / file_info["rows"]) * 100
-            if duplicate_percentage > 20:
-                validation_results["warnings"].append(
-                    f"High duplicate rows: {duplicate_percentage:.1f}%"
-                )
+                # Check for high duplicates
+                if file_info.get("rows", 0) > 0:
+                    duplicate_percentage = (file_info.get("duplicates", 0) / file_info["rows"]) * 100
+                    if duplicate_percentage > 20:
+                        validation_results["warnings"].append(
+                            f"High duplicate rows: {duplicate_percentage:.1f}%"
+                        )
 
             validation_results["is_valid"] = True
 

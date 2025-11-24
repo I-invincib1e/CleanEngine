@@ -7,6 +7,9 @@ Configures comprehensive logging for debugging and monitoring.
 import logging
 import logging.handlers
 import os
+import platform
+import sys
+import time
 from pathlib import Path
 from typing import Optional
 
@@ -106,10 +109,11 @@ def setup_logging(
 
 def log_system_info(logger: logging.Logger) -> None:
     """Log system information for debugging"""
-    import platform
-    import sys
-
-    import psutil
+    try:
+        import psutil
+    except ImportError:
+        logger.warning("psutil not available for system information")
+        return
 
     logger.info("System Information:")
     logger.info(f"  Python Version: {sys.version}")
@@ -185,15 +189,11 @@ class PerformanceTimer:
         self.start_time = None
 
     def __enter__(self):
-        import time
-
         self.start_time = time.time()
         self.logger.info(f"Starting {self.operation}...")
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        import time
-
         duration = time.time() - self.start_time
 
         if exc_type is None:

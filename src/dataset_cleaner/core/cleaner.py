@@ -209,7 +209,8 @@ class DatasetCleaner:
         df = original_df.copy()
 
         # Pre-clean validation via rule engine
-        if self.config.get("validation.enable", False):
+        validation_enabled = self.config.get("validation.enable", False)
+        if validation_enabled:
             rules = self.config.get("validation.rules", [])
             engine = RuleEngine(rules)
             pre_results = engine.evaluate(df)
@@ -234,7 +235,7 @@ class DatasetCleaner:
         df = self.normalize_data(df, method=normalization_method)
 
         # Post-clean validation via rule engine
-        if self.config.get("validation.enable", False):
+        if validation_enabled:
             rules = self.config.get("validation.rules", [])
             engine = RuleEngine(rules)
             post_results = engine.evaluate(df)
