@@ -37,18 +37,18 @@ class DataAnalyzer:
         self.logger = logger
         self.analysis_results = {}
         self.insights = []
+    
+    def _show_feedback(self) -> bool:
+        """Check if user feedback should be shown"""
+        if not self.config:
+            return True
+        return self.config.get("analysis.show_user_feedback", True)
 
     def generate_comprehensive_analysis(self):
         """Generate comprehensive data analysis"""
         self.logger.info("Starting comprehensive data analysis")
 
-        # Only show user feedback if configured
-        show_feedback = (
-            self.config.get("analysis.show_user_feedback", True)
-            if self.config
-            else True
-        )
-        if show_feedback:
+        if self._show_feedback():
             print("🔍 Performing comprehensive data analysis...")
 
         # Always perform basic statistical analysis
@@ -85,7 +85,7 @@ class DataAnalyzer:
         self.generate_insights()
 
         self.logger.info("Comprehensive analysis completed")
-        if show_feedback:
+        if self._show_feedback():
             print("✅ Comprehensive analysis completed!")
         return self.analysis_results
 
@@ -593,15 +593,8 @@ class DataAnalyzer:
                 # Check if we have time series data
                 time_series_analyzer = TimeSeriesAnalyzer(self.df)
                 if time_series_analyzer.date_column:
-                    show_feedback = (
-                        self.config.get("analysis.show_user_feedback", True)
-                        if self.config
-                        else True
-                    )
-                    if show_feedback:
-                        print(
-                            "🕒 Time series data detected - performing temporal analysis..."
-                        )
+                    if self._show_feedback():
+                        print("🕒 Time series data detected - performing temporal analysis...")
 
                     # Perform time series analysis
                     time_series_results = time_series_analyzer.comprehensive_analysis()
@@ -611,29 +604,19 @@ class DataAnalyzer:
                     ts_insights = time_series_results.get("insights", [])
                     self.insights.extend(ts_insights)
 
-                    if show_feedback:
+                    if self._show_feedback():
                         print("✅ Time series analysis completed!")
 
         except Exception as e:
             self.logger.error(f"Time series analysis failed: {str(e)}")
-            show_feedback = (
-                self.config.get("analysis.show_user_feedback", True)
-                if self.config
-                else True
-            )
-            if show_feedback:
+            if self._show_feedback():
                 print(f"⚠️ Time series analysis failed: {str(e)}")
             self.analysis_results["time_series_analysis"] = {"error": str(e)}
 
     def statistical_testing(self):
         """Perform advanced statistical testing"""
         try:
-            show_feedback = (
-                self.config.get("analysis.show_user_feedback", True)
-                if self.config
-                else True
-            )
-            if show_feedback:
+            if self._show_feedback():
                 print("📊 Performing advanced statistical tests...")
 
             # Initialize statistical tester
@@ -649,17 +632,12 @@ class DataAnalyzer:
             stat_insights = test_results.get("statistical_insights", [])
             self.insights.extend(stat_insights)
 
-            if show_feedback:
+            if self._show_feedback():
                 print("✅ Statistical testing completed!")
 
         except Exception as e:
             self.logger.error(f"Statistical testing failed: {str(e)}")
-            show_feedback = (
-                self.config.get("analysis.show_user_feedback", True)
-                if self.config
-                else True
-            )
-            if show_feedback:
+            if self._show_feedback():
                 print(f"⚠️ Statistical testing failed: {str(e)}")
             self.analysis_results["statistical_tests"] = {"error": str(e)}
 
@@ -669,18 +647,13 @@ class DataAnalyzer:
             self.logger.info("Visualizations disabled in configuration")
             return None
 
-        show_feedback = (
-            self.config.get("analysis.show_user_feedback", True)
-            if self.config
-            else True
-        )
-        if show_feedback:
+        if self._show_feedback():
             print("📊 Creating analysis visualizations...")
         self.logger.info("Creating analysis visualizations")
 
         viz_folder = output_folder / "visualizations"
         viz_folder.mkdir(exist_ok=True)
-        if show_feedback:
+        if self._show_feedback():
             print(f"📁 Created visualizations folder: {viz_folder}")
 
         # Set style
@@ -707,7 +680,7 @@ class DataAnalyzer:
         self.create_time_series_visualizations(viz_folder)
 
         self.logger.info(f"Visualizations saved in: {viz_folder}")
-        if show_feedback:
+        if self._show_feedback():
             print(f"📈 Visualizations saved in: {viz_folder}")
         return viz_folder
 
@@ -718,11 +691,10 @@ class DataAnalyzer:
             if self.config
             else True
         )
-        if show_feedback:
-            print(f"🔥 Creating correlation heatmap in: {viz_folder}")
         numeric_cols = self.df.select_dtypes(include=[np.number]).columns
+        
         if show_feedback:
-            print(f"📊 Found {len(numeric_cols)} numeric columns: {list(numeric_cols)}")
+            print(f"🔥 Creating correlation heatmap ({len(numeric_cols)} numeric columns)")
 
         if len(numeric_cols) > 1:
             fig_size = (
@@ -767,11 +739,10 @@ class DataAnalyzer:
             if self.config
             else True
         )
-        if show_feedback:
-            print(f"🔥 Creating distribution plots in: {viz_folder}")
         numeric_cols = self.df.select_dtypes(include=[np.number]).columns
+        
         if show_feedback:
-            print(f"📊 Found {len(numeric_cols)} numeric columns: {list(numeric_cols)}")
+            print(f"📊 Creating distribution plots ({len(numeric_cols)} numeric columns)")
 
         if len(numeric_cols) > 0:
             n_cols = min(4, len(numeric_cols))
@@ -911,21 +882,11 @@ class DataAnalyzer:
                 time_series_analyzer = TimeSeriesAnalyzer(self.df)
                 if time_series_analyzer.date_column:
                     time_series_analyzer.create_visualizations(viz_folder)
-                    show_feedback = (
-                        self.config.get("analysis.show_user_feedback", True)
-                        if self.config
-                        else True
-                    )
-                    if show_feedback:
+                    if self._show_feedback():
                         print("📈 Time series visualizations created!")
         except Exception as e:
             self.logger.error(f"Time series visualization failed: {str(e)}")
-            show_feedback = (
-                self.config.get("analysis.show_user_feedback", True)
-                if self.config
-                else True
-            )
-            if show_feedback:
+            if self._show_feedback():
                 print(f"⚠️ Time series visualization failed: {str(e)}")
 
     def generate_analysis_report(self, output_folder, dataset_name):
