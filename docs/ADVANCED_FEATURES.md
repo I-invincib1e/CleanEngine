@@ -1,187 +1,386 @@
-# 🔬 Advanced Data Analysis Features
+# 🔬 CleanEngine — Advanced Features Guide
 
 ## Overview
-The enhanced dataset cleaner now includes comprehensive data analysis capabilities that go far beyond basic cleaning. It provides professional-grade insights, visualizations, and recommendations.
 
-## What's New in the Advanced Version
+CleanEngine v0.2.0 extends the core cleaning pipeline with four production-grade capabilities that transform it from a one-time cleaning helper into a **data quality platform**:
 
-### 🎯 Comprehensive Analysis Pipeline
-1. **Statistical Analysis**: Descriptive statistics, skewness, kurtosis
-2. **Correlation Analysis**: Automatic detection of relationships
-3. **Distribution Analysis**: Normality tests and balance assessment
-4. **Feature Importance**: Mutual information-based ranking
-5. **Clustering Analysis**: Optimal cluster detection
-6. **Anomaly Detection**: Isolation Forest outlier identification
-7. **Data Quality Assessment**: Multi-dimensional quality scoring
-8. **Automated Insights**: AI-generated recommendations
+1. **Domain Templates** — pre-tuned cleaning configs for 6 industry verticals
+2. **Cleaning Recipe Export** — auto-generate Python scripts, SQL queries, and YAML configs
+3. **Data Drift Monitor** — statistical comparison of two dataset versions
+4. **Anomaly Explorer** — Isolation Forest detection with plain-English explanations
 
-### 📊 Professional Visualizations
-- **Correlation Heatmap**: Beautiful correlation matrices with color coding
-- **Distribution Plots**: Histograms for all numeric variables
-- **Feature Importance Charts**: Ranked importance visualization
-- **Quality Dashboard**: 4-panel quality overview
+---
 
-### 📋 Enhanced Reporting
-- **Markdown Reports**: Professional analysis reports
-- **JSON Data**: Structured results for further processing
-- **Actionable Recommendations**: Data-driven improvement suggestions
+## 1. 🗂️ Domain Templates
 
-## Example Analysis Output
+### What it does
+Selecting a domain template in the GUI sidebar automatically populates all cleaning parameters with industry-appropriate defaults and surfaces column-level hints and validation rules for common field names in that domain.
 
-### Sample Dataset Analysis
-For a dataset with employee information (Name, Age, Salary, Department, etc.):
+### Available Templates
 
-#### Key Insights Generated:
-- ✅ **Data Quality Score**: 90.6/100
-- 🔗 **Strong Correlations**: Age ↔ Salary (0.972), Age ↔ Experience (0.969)
-- 🎯 **Feature Importance**: Performance_Score is most predictive
-- 📊 **Natural Clusters**: Data groups into 6 distinct clusters
-- ⚠️ **Anomaly Rate**: 10% of data points are outliers
-
-#### Recommendations Provided:
-- **Segmentation**: Consider analyzing by the 6 natural data clusters
-- **Feature Selection**: Remove highly correlated features to reduce multicollinearity
-- **Data Collection**: Small dataset - consider collecting more data
-
-### Generated Files Structure
+#### 🔧 General Purpose
+```yaml
+missing_threshold: 0.50
+outlier_method: iqr
+encoding_method: label
+normalization_method: minmax
 ```
-Cleans-sample_data/
-├── cleaned_sample_data.csv                    # Cleaned dataset
-├── sample_data_cleaning_report.json           # Cleaning process details
-├── sample_data_cleaning_summary.txt           # Human-readable cleaning summary
-├── sample_data_analysis_report.md             # Comprehensive analysis report
-├── sample_data_analysis_results.json          # Structured analysis data
-└── visualizations/                            # Professional visualizations
-    ├── correlation_heatmap.png                # Correlation matrix heatmap
-    ├── distributions.png                      # Distribution plots
-    ├── feature_importance.png                 # Feature ranking chart
-    └── quality_dashboard.png                  # 4-panel quality overview
+Balanced defaults suitable for any tabular dataset.
+
+#### 🏥 Healthcare / Clinical
+```yaml
+missing_threshold: 0.20   # Clinical data must be nearly complete
+outlier_method: zscore    # Extreme vitals can be real events — IQR too aggressive
+encoding_method: label
+normalization_method: standard  # Medical measurements are normally distributed
 ```
+**Column hints**: `age` (0–130), `weight` (0.5–500 kg), `bmi` (10–80), `blood_pressure`, `diagnosis`  
+**Validation rules**: age 0–130, BMI 10–80  
+**Tips**: Check for PII (names, SSNs, DOBs) before sharing output. Watch for ICD-10 code formatting.
 
-## Usage Examples
-
-### CLI with Advanced Analysis
-```bash
-# Full analysis (default)
-python dataset_cleaner.py data.csv
-
-# Skip analysis if needed
-python dataset_cleaner.py data.csv --no-analysis
-
-# Custom parameters with analysis
-python dataset_cleaner.py data.csv --outlier-method zscore --encoding onehot
+#### 💰 Finance / Transactions
+```yaml
+missing_threshold: 0.10   # Financial records should be complete
+outlier_method: iqr       # Detects extreme transaction amounts (possible fraud)
+encoding_method: label
+normalization_method: standard  # Fat-tailed monetary distributions
 ```
+**Column hints**: `amount` (non-negative), `transaction_id` (unique), `currency` (ISO 3-letter)  
+**Tips**: Deduplicate transaction IDs. Verify no negative amounts where unexpected.
 
-### Streamlit GUI
-- Upload dataset
-- Configure cleaning parameters
-- Enable "Perform Advanced Analysis" checkbox
-- View insights, quality scores, and visualizations
-- Download complete analysis package
+#### 🛒 E-commerce / Retail
+```yaml
+missing_threshold: 0.30
+outlier_method: iqr
+encoding_method: onehot   # Product categories work well with one-hot
+normalization_method: minmax  # Maps prices/quantities to [0,1] for ML
+```
+**Column hints**: `price` (≥0), `quantity` (positive integer), `rating` (1–5), `sku` (no whitespace)  
+**Tips**: Deduplicate SKUs — same item often appears with slight name variations.
 
-### Programmatic Usage
+#### 📋 Survey / Research
+```yaml
+missing_threshold: 0.40   # Respondents often skip optional questions
+outlier_method: iqr
+encoding_method: label    # Preserves Likert scale order
+normalization_method: minmax
+```
+**Tips**: Watch for straight-liners (same answer every time). Flag free-text for manual review.
+
+#### 📡 IoT / Sensor Data
+```yaml
+missing_threshold: 0.15   # Gaps indicate device failures
+outlier_method: zscore    # Sensor readings are normally distributed
+encoding_method: label
+normalization_method: standard  # Preserves physical meaning of deviations
+```
+**Column hints**: `timestamp` (monotonically increasing), `humidity` (0–100%), `device_id`  
+**Tips**: Consider rolling median imputation for short sensor gaps instead of global median.
+
+### Using templates programmatically
 ```python
-from dataset_cleaner import DatasetCleaner
+from dataset_cleaner.interfaces.domain_templates import get_template
 
-cleaner = DatasetCleaner()
-cleaned_df = cleaner.clean_dataset('data.csv')
-
-# Perform advanced analysis
-output_folder = Path('Cleans-data')
-analysis_results = cleaner.perform_advanced_analysis(output_folder, 'data')
+tmpl = get_template('healthcare')
+print(tmpl.missing_threshold)   # 0.2
+print(tmpl.tips)                # list of domain-specific tips
+print(tmpl.column_hints)        # dict of column name → hint
 ```
 
-## Analysis Components Explained
+---
 
-### 1. Statistical Analysis
-- **Descriptive Statistics**: Mean, median, std, min, max, quartiles
-- **Skewness**: Measure of distribution asymmetry
-- **Kurtosis**: Measure of distribution tail heaviness
-- **Normality Tests**: Shapiro-Wilk test for normal distribution
+## 2. 🧾 Cleaning Recipe Export
 
-### 2. Correlation Analysis
-- **Pearson Correlation**: Linear relationships between numeric variables
-- **Strong Correlation Detection**: Automatically flags correlations > 0.7
-- **Multicollinearity Warning**: Suggests feature selection when needed
+### What it does
+After any cleaning session in the GUI, CleanEngine auto-generates production-ready code representing the exact steps that were applied to your data — so you can reproduce the same transformation on new data without the GUI.
 
-### 3. Feature Importance
-- **Mutual Information**: Non-linear relationship detection
-- **Ranking**: Features ranked by predictive power
-- **Target Selection**: Uses last numeric column as target
+### Python Script
 
-### 4. Clustering Analysis
-- **K-means Clustering**: Automatic optimal cluster detection
-- **Elbow Method**: Determines best number of clusters
-- **Cluster Profiling**: Size and percentage of each cluster
+Generated from `recipe_exporter.generate_python_recipe(report, filename)`.
 
-### 5. Anomaly Detection
-- **Isolation Forest**: Unsupervised outlier detection
-- **Contamination Rate**: Configurable anomaly threshold
-- **Anomaly Scoring**: Individual anomaly scores for each point
+The script:
+- Loads data with automatic encoding detection (CSV) or format sniffing
+- Drops high-missing columns (same ones that were dropped in your session)
+- Imputes missing values (median for numeric, mode for categorical)
+- Removes duplicates
+- Removes outliers column-by-column using the same method (IQR or Z-score)
+- Encodes categorical variables (label or one-hot)
+- Normalizes numeric columns (Min-Max or Standard)
 
-### 6. Data Quality Assessment
-- **Completeness**: Percentage of non-missing values
-- **Uniqueness**: Ratio of unique values per column
-- **Consistency**: Detection of formatting issues
-- **Overall Score**: Weighted composite quality score (0-100)
+**Usage**:
+```bash
+python clean_my_dataset.py
+# Loaded 50,000 rows × 22 columns
+# Cleaned: 47,312 rows × 19 columns
+# Saved to cleaned_my_dataset.csv
+```
 
-## Benefits for Data Scientists
+To apply to a different file, just change `INPUT_FILE` at the top of the script.
 
-### 🚀 Accelerated EDA
-- Skip manual exploratory data analysis
-- Get immediate insights and recommendations
-- Professional visualizations ready for presentations
+### SQL Query
 
-### 🎯 Actionable Intelligence
-- Data-driven recommendations
-- Quality scoring for decision making
-- Automated insight generation
+Generated from `recipe_exporter.generate_sql_recipe(report, table_name)`.
 
-### 📊 Professional Output
-- Publication-ready visualizations
-- Comprehensive markdown reports
-- Structured data for further analysis
+The query:
+- Uses `CREATE TABLE cleaned_X AS` pattern
+- Deduplicates via `SELECT DISTINCT`
+- Computes IQR bounds in a `WITH` CTE and filters outliers
+- Applies `DENSE_RANK()` for label encoding
+- Applies window-function normalization (Min-Max or Z-score)
 
-### ⚡ Time Savings
-- Automated analysis pipeline
-- No manual correlation checking
-- Instant quality assessment
+Compatible with PostgreSQL, Snowflake, BigQuery, and any ANSI SQL-compliant database.
+
+### YAML Config
+
+Generated from `recipe_exporter.generate_yaml_config(...)`.
+
+Share with your team so everyone runs the same settings:
+```yaml
+# cleanengine_mydata.yaml
+cleaning:
+  missing_values:
+    threshold: 0.3
+  outliers:
+    method: iqr
+    threshold: 1.5
+  encoding:
+    categorical_method: label
+  normalization:
+    method: minmax
+analysis:
+  enable: true
+```
+
+Load it in a future session or pass it to the CLI:
+```bash
+cleanengine clean new_data.csv --config cleanengine_mydata.yaml
+```
+
+---
+
+## 3. 📡 Data Drift Monitor
+
+### What it does
+Compares two snapshots of the same dataset and produces a column-level statistical drift report — without any labelling or ground truth required.
+
+### How drift is detected
+
+| Column type | Test used | Drifted if |
+|-------------|-----------|------------|
+| Numeric | Kolmogorov-Smirnov (2-sample) | p-value < 0.05 |
+| Categorical | Chi-squared goodness-of-fit | p-value < 0.05 |
+| Missing values | Delta percentage | Δ > 5 pp |
+| Schema | Set comparison | Any added/removed columns |
+
+### Drift severity scale
+| Severity | Columns drifted |
+|----------|----------------|
+| 🟢 None | 0% |
+| 🟡 Low | < 20% |
+| 🟠 Medium | 20–50% |
+| 🔴 High | > 50% |
+
+### Report structure
+```json
+{
+  "reference_shape": {"rows": 50000, "cols": 22},
+  "new_shape": {"rows": 52100, "cols": 22},
+  "schema_changes": {
+    "added_columns": ["new_feature"],
+    "removed_columns": [],
+    "common_columns": [...]
+  },
+  "missing_drift": {
+    "age": {"reference_pct": 2.1, "new_pct": 8.4, "delta_pct": 6.3, "significant_change": true}
+  },
+  "distribution_drift": {
+    "salary": {
+      "type": "numeric",
+      "statistical_test": {"test": "ks", "statistic": 0.142, "p_value": 0.001, "drifted": true},
+      "reference_stats": {"mean": 75200, "std": 18400, ...},
+      "new_stats": {"mean": 82100, "std": 21300, ...},
+      "mean_delta": 6900
+    }
+  },
+  "summary": {
+    "columns_with_drift": 4,
+    "drift_rate_pct": 18.2,
+    "severity": "low"
+  }
+}
+```
+
+### Programmatic usage
+```python
+import pandas as pd
+from dataset_cleaner.interfaces.drift_monitor import compare_datasets
+
+df_jan = pd.read_csv('sales_jan.csv')
+df_feb = pd.read_csv('sales_feb.csv')
+
+report = compare_datasets(df_jan, df_feb)
+
+# Check severity
+print(report['summary']['severity'])          # "low"
+print(report['summary']['drifted_column_names'])  # ['price', 'region']
+
+# Get per-column details
+for col, data in report['distribution_drift'].items():
+    if data['statistical_test']['drifted']:
+        print(f"{col}: p={data['statistical_test']['p_value']}")
+```
+
+### MLOps integration example
+```python
+import json
+from dataset_cleaner.interfaces.drift_monitor import compare_datasets
+
+report = compare_datasets(df_training, df_production)
+
+if report['summary']['severity'] in ('medium', 'high'):
+    # Trigger model retraining
+    send_alert(f"Data drift detected: {report['summary']['drift_rate_pct']:.1f}% of columns drifted")
+    trigger_retraining_pipeline()
+```
+
+---
+
+## 4. 🔍 Anomaly Explorer
+
+### What it does
+Detects anomalous rows using **Isolation Forest** and explains each one in plain English by identifying which features deviate most from the dataset's normal distribution.
+
+### Detection method
+Isolation Forest works by randomly partitioning the feature space. Anomalous points are easier to isolate (require fewer splits), so they get lower anomaly scores. This method:
+- Requires no labelled data
+- Works on high-dimensional data
+- Is robust to varying scales (internally normalized)
+- Has a configurable `contamination` parameter (expected anomaly fraction)
+
+### Explanation method
+For each detected anomaly, CleanEngine checks every numeric column and flags values that:
+- Have absolute z-score ≥ 2 (unusual) or ≥ 3 (extreme)
+- Fall outside IQR fences (Q1 − 1.5×IQR or Q3 + 1.5×IQR)
+
+Each flagged feature gets:
+- Its raw value and percentile rank
+- Direction (unusually high or low)
+- Z-score
+- Whether it breaches the IQR fence
+
+### Example output
+```
+Row 1842 is anomalous because:
+  `salary`         = 2,400,000  (unusually high, 99.9th pct); z=4.7; above IQR upper fence (385,000)
+  `age`            = 19         (unusually low, 2.3rd pct); z=-2.9
+  `years_at_company` = 22       (unusually high, 98th pct); z=3.1; above IQR upper fence (18)
+  ...and 1 more deviating feature
+```
+
+### Report structure
+```json
+{
+  "summary": {
+    "total_rows": 50000,
+    "total_anomalies": 2500,
+    "anomaly_rate_pct": 5.0,
+    "columns_analyzed": ["age", "salary", "years_at_company", ...]
+  },
+  "anomaly_rows": [
+    {
+      "row_index": 1842,
+      "anomaly_score": -0.312,
+      "summary": "Row 1842 is anomalous because: `salary` = 2400000 ...",
+      "feature_deviations": [
+        {
+          "column": "salary",
+          "value": 2400000,
+          "z_score": 4.7,
+          "percentile": 99.9,
+          "direction": "high",
+          "above_iqr_upper": true,
+          "explanation": "Value 2400000 is in the 99.9th percentile; z-score = 4.7 (extreme, >3σ); Above IQR upper fence (385000)."
+        }
+      ]
+    }
+  ]
+}
+```
+
+### Programmatic usage
+```python
+import pandas as pd
+from dataset_cleaner.interfaces.anomaly_explainer import explain_anomalies
+
+df = pd.read_csv('transactions.csv')
+results = explain_anomalies(df, contamination=0.05, max_anomalies=100)
+
+print(f"Found {results['summary']['total_anomalies']} anomalies "
+      f"({results['summary']['anomaly_rate_pct']:.1f}%)")
+
+for row in results['anomaly_rows'][:10]:
+    print(f"\n{row['summary']}")
+    for dev in row['feature_deviations'][:3]:
+        print(f"  {dev['column']}: {dev['value']} (z={dev['z_score']}, {dev['percentile']}th pct)")
+```
+
+---
+
+## Previous Advanced Features (v0.1.0)
+
+### Statistical Analysis
+- Descriptive statistics, skewness, kurtosis
+- Shapiro-Wilk normality tests
+- Pearson/Spearman/Kendall correlation matrices
+- Strong correlation detection (> 0.7)
+
+### Feature Importance
+- Mutual Information scoring
+- Feature ranking by predictive power
+
+### Clustering Analysis
+- K-Means with Elbow method for optimal k
+- DBSCAN and Hierarchical alternatives
+- Cluster profiling (size and percentage)
+
+### Data Quality Scoring
+- Completeness, uniqueness, consistency dimensions
+- Composite score 0–100
+
+### Visualizations
+- Correlation heatmap, distribution plots
+- Feature importance chart, quality dashboard (4-panel)
+
+---
 
 ## Integration with Data Science Workflows
 
 ### Jupyter Notebooks
 ```python
-# Load and analyze in one step
+from pathlib import Path
 from dataset_cleaner import DatasetCleaner
+from dataset_cleaner.interfaces.anomaly_explainer import explain_anomalies
+
 cleaner = DatasetCleaner()
 df = cleaner.clean_dataset('data.csv')
 analysis = cleaner.perform_advanced_analysis(Path('output'), 'data')
 
-# Access insights programmatically
-insights = analysis['analysis_results']['insights']
-quality_score = analysis['analysis_results']['data_quality']['overall_quality_score']
+# Anomaly report inline
+results = explain_anomalies(df)
+for row in results['anomaly_rows'][:5]:
+    print(row['summary'])
 ```
 
-### MLOps Pipelines
-- Automated data quality gates
-- Feature importance for feature selection
-- Anomaly detection for data validation
-- Quality scoring for model retraining triggers
+### MLOps / CI-CD Pipelines
+```python
+from dataset_cleaner.interfaces.drift_monitor import compare_datasets
 
-### Business Intelligence
-- Executive summary reports
-- Quality dashboards
-- Automated insights for stakeholders
-- Professional visualizations for presentations
+# Run in your data validation step
+report = compare_datasets(df_training, df_new_batch)
 
-## Future Enhancements
-- Time series analysis for temporal data
-- Advanced ML model recommendations
-- Interactive dashboards
-- Automated A/B testing framework
-- Predictive modeling suggestions
-- Data drift detection
+assert report['summary']['severity'] not in ('medium', 'high'), \
+    f"Data drift too high — {report['summary']['drift_rate_pct']}% of columns drifted"
+```
 
----
-
-The advanced analysis features transform the dataset cleaner from a simple cleaning tool into a comprehensive data intelligence platform, providing the insights needed for informed data-driven decisions.
+### dbt / SQL Pipelines
+Export the SQL cleaning recipe from the GUI and paste it directly into your dbt model or SQL pipeline — it's standard ANSI SQL with no CleanEngine runtime dependency.
