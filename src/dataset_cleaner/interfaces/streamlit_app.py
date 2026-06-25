@@ -12,10 +12,10 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
-from data_analyzer import DataAnalyzer
 from plotly.subplots import make_subplots
 
-from dataset_cleaner import DatasetCleaner
+from dataset_cleaner.analysis.analyzer import DataAnalyzer
+from dataset_cleaner.core.cleaner import DatasetCleaner
 
 
 def create_missing_values_heatmap(df):
